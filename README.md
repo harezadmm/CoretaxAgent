@@ -2,15 +2,27 @@
 
 Fondasi awal AI agent untuk membantu menjawab pertanyaan umum mengenai Coretax berdasarkan knowledge base yang disediakan.
 
-## Fokus versi pertama
+## Fokus versi saat ini
 
-- menerima pertanyaan dalam bentuk teks;
+- menerima pertanyaan teks melalui `POST /api/ask`;
 - mencari konteks dari dokumen `.md` atau `.txt`;
 - menyusun jawaban hanya dari konteks yang ditemukan;
 - menyertakan sumber dokumen;
-- mengeskalasi pertanyaan personal, transaksional, atau yang tidak memiliki sumber memadai.
+- mengeskalasi pertanyaan personal, transaksional, atau yang tidak memiliki sumber memadai;
+- menyediakan dashboard operator dengan Overview, Escalations, Knowledge Base, Analytics, Workflow, dan Settings;
+- menyediakan visualisasi workflow n8n Coretax Agent.
 
-Voice agent dan dashboard belum dimasukkan pada tahap ini. Keduanya akan dibangun setelah kualitas jawaban teks dapat diuji.
+Voice provider, eksekusi n8n nyata, penyimpanan session, dan data dashboard produksi masih berada pada roadmap P1. Dashboard saat ini merupakan UI operasional dengan sebagian data simulasi.
+
+## Dokumentasi proyek
+
+- [`docs/PRD.md`](docs/PRD.md) — product requirements, scope, user story, dan acceptance criteria.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — arsitektur saat ini dan target integrasi.
+- [`docs/N8N_WORKFLOW_SPEC.md`](docs/N8N_WORKFLOW_SPEC.md) — spesifikasi node dan jalur workflow n8n.
+- [`docs/RAG_KNOWLEDGE_SPEC.md`](docs/RAG_KNOWLEDGE_SPEC.md) — kebijakan corpus, retrieval, dan evaluasi RAG.
+- [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md) — test matrix dan checklist penerimaan.
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — tahapan pengerjaan sampai pilot.
+- [`docs/REPORT_TEMPLATE.md`](docs/REPORT_TEMPLATE.md) — template laporan akademik.
 
 ## Knowledge base resmi
 
