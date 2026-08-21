@@ -28,8 +28,52 @@ function screenStat(label, value, note, tone = 'cyan') {
   return `<article class="screen-stat"><span class="stat-mark ${tone}"></span><p>${label}</p><strong>${value}</strong><small>${note}</small></article>`;
 }
 
+function workflowIcon(title, fallback) {
+  const key = /Incoming Call|Webhook/.test(title) ? 'webhook'
+    : /Twilio|Send Answer/.test(title) ? 'twilio'
+    : /Schedule KB/.test(title) ? 'schedule'
+    : /Get Coretax Docs/.test(title) ? 'github'
+    : /Extract.*Chunk|Documents/.test(title) ? 'document'
+    : /Vector Search|Upsert Vectors/.test(title) ? 'postgres'
+    : /Generate Embedding|Speech to Text|Detect Language|Coretax Agent|Generate Embeddings/.test(title) ? 'openai'
+    : /Text Normalization|Format Context|Validate Answer|Caller Metadata/.test(title) ? 'code'
+    : /User Query|Answer Ready/.test(title) ? 'pencil'
+    : /Can AI Answer/.test(title) ? 'decision'
+    : /Text to Speech/.test(title) ? 'tts'
+    : /Create Escalation/.test(title) ? 'http'
+    : /Notify Agent Team/.test(title) ? 'gmail'
+    : /Save Transcript/.test(title) ? 'drive'
+    : /Dashboard Update/.test(title) ? 'chart'
+    : /Alert on Failure/.test(title) ? 'slack'
+    : /Call Session|Update Session/.test(title) ? 'sheets'
+    : 'generic';
+  const paths = {
+    webhook: '<path d="M12 4v4M7 18l3-5M17 18l-3-5"/><circle cx="12" cy="4" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><circle cx="12" cy="12" r="3"/>',
+    twilio: '<circle cx="12" cy="12" r="8"/><circle cx="9" cy="9" r="1.3" fill="currentColor"/><circle cx="15" cy="9" r="1.3" fill="currentColor"/><circle cx="9" cy="15" r="1.3" fill="currentColor"/><circle cx="15" cy="15" r="1.3" fill="currentColor"/>',
+    sheets: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h6M12 9v10"/>',
+    schedule: '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
+    github: '<path d="M8 8l-3 4 3 4M16 8l3 4-3 4M13 6l-2 12"/>',
+    document: '<path d="M7 3h7l3 3v15H7z"/><path d="M14 3v4h4M10 12h4M10 16h4"/>',
+    postgres: '<path d="M7 6c0-3 10-3 10 0v9c0 3-10 3-10 0z"/><path d="M8 6c0 3 8 3 8 0M10 17v3M14 17v3"/>',
+    openai: '<path d="M12 4a4 4 0 0 1 4 4v1a4 4 0 0 1 4 4 4 4 0 0 1-4 4h-1a4 4 0 0 1-4 4 4 4 0 0 1-4-4v-1a4 4 0 0 1-4-4 4 4 0 0 1 4-4h1a4 4 0 0 1 4-4z"/><path d="M8 8l8 8M16 8l-8 8"/>',
+    code: '<path d="M9 7 5 12l4 5M15 7l4 5-4 5"/>',
+    pencil: '<path d="m5 16 1-4 9-9 3 3-9 9zM5 16l4-1"/>',
+    decision: '<path d="m12 4 7 4-7 4-7-4zM5 14l7 4 7-4M5 18l7 4 7-4"/>',
+    tts: '<path d="M6 10v4h3l4 4V6l-4 4zM17 9a4 4 0 0 1 0 6M19 7a7 7 0 0 1 0 10"/>',
+    http: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4a12 12 0 0 1 0 16M12 4a12 12 0 0 0 0 16"/>',
+    gmail: '<path d="M4 7l8 6 8-6v11H4zM4 7l8 6 8-6"/>',
+    drive: '<path d="m9 4 6 0 5 9H8zM9 4 4 13l4 7h10l-5-7"/>',
+    chart: '<path d="M5 19V9M10 19V5M15 19v-7M20 19V3"/>',
+    slack: '<circle cx="8" cy="8" r="2"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/><circle cx="16" cy="16" r="2"/><path d="M10 8h4M8 10v4M14 16h-4M16 14v-4"/>',
+    generic: `<text x="12" y="16" text-anchor="middle">${fallback}</text>`,
+  };
+  return `<i class="node-icon ${iconClassForWorkflowKey(key)}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[key]}</svg></i>`;
+}
+
+function iconClassForWorkflowKey(key) { return `icon-${key}`; }
+
 function workflowNode(iconClass, icon, title, subtitle, meta, state = 'SUCCESS') {
-  return `<div class="n8n-node flow-node"><i class="node-icon ${iconClass}">${icon}</i><strong>${title}</strong><small>${subtitle}</small><em class="node-${state.toLowerCase()}">${state}</em>${meta ? `<span class="flow-node-meta">${meta}</span>` : ''}</div>`;
+  return `<div class="n8n-node flow-node"><span class="workflow-rendered-icon">${workflowIcon(title, icon)}</span><strong>${title}</strong><small>${subtitle}</small><em class="node-${state.toLowerCase()}">${state}</em>${meta ? `<span class="flow-node-meta">${meta}</span>` : ''}</div>`;
 }
 
 function workflowArrow(type = 'sync') {

@@ -185,6 +185,10 @@ button,input { font:inherit; } button { cursor:pointer; } .app-shell { display:f
 .workflow-reference-content .workflow-zone { min-height:142px; padding:12px; overflow:visible; }
 .workflow-reference-content .workflow-chain { width:100%; min-width:0; margin-top:22px; gap:6px; }
 .workflow-reference-content .flow-node { flex:1 1 0; width:auto!important; min-width:0; max-width:none; padding-left:30px; }
+.workflow-reference-content .workflow-rendered-icon { position:absolute; left:8px; top:12px; width:22px; height:22px; display:block; }
+.workflow-reference-content .workflow-rendered-icon .node-icon { position:static; width:22px; height:22px; border-radius:0; display:grid; place-items:center; color:inherit; }
+.workflow-reference-content .workflow-rendered-icon svg { display:block; width:22px; height:22px; }
+.workflow-reference-content .icon-webhook { color:#ff5261; }.workflow-reference-content .icon-twilio { color:#ff4454; }.workflow-reference-content .icon-sheets { color:#4ed57f; }.workflow-reference-content .icon-schedule { color:#54dcae; }.workflow-reference-content .icon-github { color:#f1f5f7; }.workflow-reference-content .icon-document { color:#a79aff; }.workflow-reference-content .icon-postgres { color:#4b9fda; }.workflow-reference-content .icon-openai { color:#f1f4f5; }.workflow-reference-content .icon-code { color:#ffad3c; }.workflow-reference-content .icon-pencil { color:#8492ff; }.workflow-reference-content .icon-decision { color:#46dcb0; }.workflow-reference-content .icon-tts { color:#55d8b1; }.workflow-reference-content .icon-http { color:#7e87ff; }.workflow-reference-content .icon-gmail { color:#ff6b62; }.workflow-reference-content .icon-drive { color:#53d692; }.workflow-reference-content .icon-chart { color:#d170ef; }.workflow-reference-content .icon-slack { color:#55d7ae; }
 .workflow-reference-content .flow-node strong { font-size:10px; line-height:1.1; }
 .workflow-reference-content .flow-node small { font-size:8px; white-space:normal; line-height:1.15; }
 .workflow-reference-content .flow-node em { font-size:7px; }
