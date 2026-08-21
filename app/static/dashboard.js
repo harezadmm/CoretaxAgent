@@ -9,6 +9,12 @@ function notify(message) {
 
 const screenStage = document.querySelector('#screen-stage');
 const overviewView = document.querySelector('#overview');
+
+function stopDotPlotAnimation(plot = document.querySelector('.dot-plot')) {
+  if (!plot || !plot._waveFrame) return;
+  cancelAnimationFrame(plot._waveFrame);
+  plot._waveFrame = null;
+}
 const viewLabels = {
   overview: 'Support Operations',
   live: 'Live Calls',
@@ -126,6 +132,7 @@ const screenTemplates = {
 };
 
 function navigateToView(view) {
+  if (view !== 'overview') stopDotPlotAnimation();
   document.querySelectorAll('.nav-item').forEach((entry) => entry.classList.toggle('active', entry.dataset.view === view));
   document.querySelector('#page-title').textContent = viewLabels[view] || view;
   if (view === 'overview') {
@@ -246,7 +253,8 @@ function renderDotPlot(mode = 'weekly') {
   const maxHeight = Math.max(...columns);
   const dotStep = maxHeight > 1 ? Math.min(7.2, (baseline - 14) / (maxHeight - 1)) : 7.2;
 
-  if (plot._waveFrame) cancelAnimationFrame(plot._waveFrame);
+  stopDotPlotAnimation(plot);
+  plot.dataset.mode = mode;
   plot.replaceChildren();
   [16, 48, 80, 112, 144].forEach((y, index) => {
     const line = document.createElementNS(SVG_NS, 'line');
@@ -302,41 +310,62 @@ function renderDotPlot(mode = 'weekly') {
   }
 
   const dots = [...plot.querySelectorAll('.plot-dot')];
+  const dotState = dots.map((circle) => {
+    const targetCy = Number(circle.dataset.targetCy);
+    return {
+      circle,
+      revealStart: Number(circle.dataset.revealStart),
+      targetCy,
+      distance: baseline - targetCy,
+      collapseOffset: Number(circle.dataset.collapseOffset),
+      lastCy: Number.NaN,
+      lastOpacity: Number.NaN,
+    };
+  });
   const revealDuration = 110;
   const resetDuration = 180;
   const holdDuration = 2500;
-  const maxReveal = Math.max(...dots.map((circle) => Number(circle.dataset.revealStart) + revealDuration));
+  const maxReveal = Math.max(...dotState.map(({ revealStart }) => revealStart + revealDuration));
   const collapseBase = maxReveal + holdDuration;
-  const maxCollapse = Math.max(...dots.map((circle) => Number(circle.dataset.collapseOffset)));
+  const maxCollapse = Math.max(...dotState.map(({ collapseOffset }) => collapseOffset));
   const cycleDuration = collapseBase + maxCollapse + resetDuration;
+  const updateDot = (state, cy, opacity) => {
+    const { circle } = state;
+    if (!Number.isNaN(state.lastCy) && Math.abs(state.lastCy - cy) < 0.05 && Math.abs(state.lastOpacity - opacity) < 0.015) return;
+    if (Number.isNaN(state.lastCy) || Math.abs(state.lastCy - cy) >= 0.05) {
+      circle.setAttribute('cy', cy.toFixed(2));
+      state.lastCy = cy;
+    }
+    if (Number.isNaN(state.lastOpacity) || Math.abs(state.lastOpacity - opacity) >= 0.015) {
+      circle.style.opacity = String(opacity);
+      state.lastOpacity = opacity;
+    }
+  };
 
   const loopStartedAt = performance.now();
   const revealDots = (now) => {
+    if (overviewView.hidden || document.hidden) {
+      plot._waveFrame = null;
+      return;
+    }
     const phase = (now - loopStartedAt) % cycleDuration;
-    dots.forEach((circle) => {
-      const start = Number(circle.dataset.revealStart);
-      const targetCy = Number(circle.dataset.targetCy);
-      const distance = baseline - targetCy;
+    dotState.forEach((state) => {
+      const { revealStart, targetCy, distance, collapseOffset } = state;
       if (phase < maxReveal) {
-        const progress = Math.min(1, Math.max(0, (phase - start) / revealDuration));
+        const progress = Math.min(1, Math.max(0, (phase - revealStart) / revealDuration));
         const eased = 1 - ((1 - progress) ** 3);
-        circle.setAttribute('cy', (baseline - distance * eased).toFixed(2));
-        circle.style.opacity = String(eased);
+        updateDot(state, baseline - distance * eased, eased);
       } else if (phase < collapseBase) {
-        circle.setAttribute('cy', targetCy.toFixed(2));
-        circle.style.opacity = '1';
+        updateDot(state, targetCy, 1);
       } else {
-        const collapseStart = collapseBase + Number(circle.dataset.collapseOffset);
+        const collapseStart = collapseBase + collapseOffset;
         const collapseProgress = Math.min(1, Math.max(0, (phase - collapseStart) / resetDuration));
         if (collapseProgress === 0) {
-          circle.setAttribute('cy', targetCy.toFixed(2));
-          circle.style.opacity = '1';
+          updateDot(state, targetCy, 1);
         } else if (collapseProgress < 1) {
-          circle.setAttribute('cy', (targetCy + distance * collapseProgress).toFixed(2));
-          circle.style.opacity = String(1 - collapseProgress);
+          updateDot(state, targetCy + distance * collapseProgress, 1 - collapseProgress);
         } else {
-          circle.setAttribute('cy', baseline);
-          circle.style.opacity = '0';
+          updateDot(state, baseline, 0);
         }
       }
     });
@@ -346,6 +375,15 @@ function renderDotPlot(mode = 'weekly') {
 }
 
 renderDotPlot('weekly');
+
+document.addEventListener('visibilitychange', () => {
+  const plot = document.querySelector('.dot-plot');
+  if (document.hidden) {
+    stopDotPlotAnimation(plot);
+  } else if (!overviewView.hidden && plot) {
+    renderDotPlot(plot.dataset.mode || 'weekly');
+  }
+});
 
 async function updateSystemStatus() {
   const status = document.querySelector('#system-status');

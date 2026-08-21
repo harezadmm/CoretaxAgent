@@ -23,6 +23,10 @@ button,input { font:inherit; } button { cursor:pointer; } .app-shell { display:f
 @media(max-width:1050px) { .sidebar { width:190px; }.main-content { width:calc(100% - 190px); padding:0 20px 30px; }.metric-grid { grid-template-columns:repeat(2,1fr); }.dashboard-grid { grid-template-columns:1fr; }.resolution-panel,.escalation-panel,.topic-panel { min-height:0; }.topic-panel { grid-column:auto; } }
 @media(max-width:720px) { .app-shell { display:block; }.sidebar { position:relative; width:100%; height:auto; padding:15px; }.brand { padding-bottom:12px; }.nav-list { grid-template-columns:repeat(2,1fr); }.sidebar-bottom { display:none; }.main-content { width:100%; padding:0 14px 24px; }.topbar { height:auto; padding:17px 0; gap:14px; }.search-box { display:none; }.overview-heading { align-items:flex-start; gap:15px; }.period-picker { white-space:nowrap; }.metric-grid { grid-template-columns:1fr 1fr; gap:8px; }.metric-card { min-height:112px; padding:12px; }.metric-card strong { font-size:20px; }.table-row { grid-template-columns:1fr 1fr auto; }.table-row>span:nth-child(3),.table-row>span:nth-child(4),.table-label>span:nth-child(3),.table-label>span:nth-child(4) { display:none; }.chart-footer { padding-left:0; }.chart-scale { display:none; }.wave-chart { margin-left:0; }.wave-columns { column-gap:1px; }.wave { background-size:5px 8px; } .wave-day-labels small { font-size:7px; } .load-title h3 small { display:block; margin:3px 0 0; } }
 
+/* Keep the live chart glow while avoiding a full blur filter on every dot. */
+.plot-dot { filter:drop-shadow(0 0 1px #ffffff45); }
+.dot-plot { contain:layout paint; }
+
 /* Smooth operational motion: animated dot-wave, soft entrances, and live-state cues. */
 @keyframes dotWave {
   0%,100% { transform:scale(.92); opacity:.72; }
