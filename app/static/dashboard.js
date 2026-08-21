@@ -28,6 +28,25 @@ function screenStat(label, value, note, tone = 'cyan') {
   return `<article class="screen-stat"><span class="stat-mark ${tone}"></span><p>${label}</p><strong>${value}</strong><small>${note}</small></article>`;
 }
 
+function workflowNode(iconClass, icon, title, subtitle, meta, state = 'SUCCESS') {
+  return `<div class="n8n-node flow-node"><i class="node-icon ${iconClass}">${icon}</i><strong>${title}</strong><small>${subtitle}</small><em class="node-${state.toLowerCase()}">${state}</em>${meta ? `<span class="flow-node-meta">${meta}</span>` : ''}</div>`;
+}
+
+function workflowArrow(type = 'sync') {
+  return `<span class="flow-arrow ${type === 'async' ? 'async' : ''}" aria-hidden="true">›</span>`;
+}
+
+const workflowScreen = () => `${screenHeader('AUTOMATION CONTROL PLANE', 'Workflow Monitor', 'Pantau workflow n8n AI Agent Coretax dari panggilan masuk sampai jawaban atau eskalasi petugas.', '<button class="primary-button" data-action="run-workflow">▶ Run test execution</button>')}
+  <div class="workflow-summary"><span class="status-pill live-pill">● WORKFLOW ACTIVE</span><span>Last execution <b>2m 14s ago</b></span><span>Success rate <b class="success-text">98.7%</b></span><span>Avg. execution <b>1.84s</b></span><button class="outline-button" data-action="refresh-workflow">↻ Refresh</button></div>
+  <div class="workflow-layout workflow-v2"><article class="workflow-canvas-panel"><div class="workflow-toolbar"><div><p class="panel-kicker">N8N WORKFLOW · CORETAX AI AGENT V2</p><h3>Inbound call → Coretax answer → human escalation</h3></div><div class="canvas-tools"><button data-action="zoom-out">−</button><span>100%</span><button data-action="zoom-in">＋</button></div></div><div class="n8n-canvas workflow-canvas-v2"><div class="canvas-grid"></div><div class="workflow-zones">
+    <section class="workflow-zone zone-trigger"><div class="zone-heading"><span>1.</span> TRIGGER &amp; INPUT <em>REAL-TIME</em></div><div class="workflow-chain">${workflowNode('trigger','⚡','Incoming Call','Twilio Webhook','webhook','RUNNING')}${workflowArrow()}${workflowNode('voice','◉','Twilio','get: call','telephony')}${workflowArrow()}${workflowNode('data','▤','Call Session','Init · append','session')}${workflowArrow()}${workflowNode('code','{ }','Caller Metadata','Extract + sanitize','set')}</div></section>
+    <section class="workflow-zone zone-voice"><div class="zone-heading"><span>2.</span> VOICE PROCESSING <em>REAL-TIME</em></div><div class="workflow-chain">${workflowNode('search','◎','Download Audio','from Twilio','HTTP Request')}${workflowArrow()}${workflowNode('brain','✦','Speech to Text','Whisper ASR','OpenAI')}${workflowArrow()}${workflowNode('code','{ }','Normalize Text','Clean + format','Code')}${workflowArrow()}${workflowNode('brain','✦','Detect Language','Bahasa Indonesia','Classifier')}${workflowArrow()}${workflowNode('context','✎','User Query','Sanitized input','set')}</div></section>
+    <section class="workflow-zone zone-understanding"><div class="zone-heading"><span>3.</span> AI UNDERSTANDING <em>LLM + RAG</em></div><div class="workflow-chain">${workflowNode('brain','✦','Generate Embedding','User query','OpenAI')}${workflowArrow()}${workflowNode('data','▤','Vector Search','Coretax KB','pgvector')}${workflowArrow()}${workflowNode('code','{ }','Format Context','RAG prompt','Code')}${workflowArrow()}${workflowNode('brain','✦','Coretax Agent','Generate answer','LLM')}${workflowArrow()}${workflowNode('code','{ }','Validate Answer','Guardrails','Code')}${workflowArrow()}${workflowNode('context','✎','Answer Ready','Prepared response','set','RUNNING')}${workflowArrow()}${workflowNode('decision','◆','Can AI Answer?','Confidence check','if','RUNNING')}</div></section>
+    <section class="workflow-zone zone-decision"><div class="zone-heading"><span>4.</span> DECISION &amp; ESCALATION <em>HUMAN HANDOVER</em></div><div class="workflow-branch-row"><div class="branch-path branch-true"><span class="branch-label">true</span>${workflowNode('voice','◖','Text to Speech','Voice response','ElevenLabs')}${workflowArrow()}${workflowNode('trigger','↗','Send Answer','Back to caller','Twilio')}${workflowArrow()}${workflowNode('data','▤','Update Session','Answered','sheet')}</div><div class="branch-path branch-false"><span class="branch-label">false</span>${workflowNode('search','◎','Create Escalation','FastAPI ticket','HTTP Request','IDLE')}${workflowArrow('async')}${workflowNode('alert','✉','Notify Agent Team','Email + dashboard','Gmail','IDLE')}${workflowArrow('async')}${workflowNode('data','▤','Update Session','Escalated','sheet','IDLE')}</div></div></section>
+    <section class="workflow-zone zone-knowledge"><div class="zone-heading"><span>5.</span> KNOWLEDGE BASE <em>ASYNC / BACKGROUND</em></div><div class="workflow-chain">${workflowNode('trigger','◷','Schedule KB Sync','Daily trigger','cron')}${workflowArrow('async')}${workflowNode('data','⌂','Get Coretax Docs','GitHub / Drive','source')}${workflowArrow('async')}${workflowNode('code','{ }','Extract &amp; Chunk','Documents','splitter')}${workflowArrow('async')}${workflowNode('brain','✦','Generate Embeddings','Document chunks','OpenAI')}${workflowArrow('async')}${workflowNode('data','▤','Upsert Vectors','Postgres KB','pgvector')}</div></section>
+    <section class="workflow-zone zone-monitoring"><div class="zone-heading"><span>6.</span> MONITORING &amp; LOGGING <em>ASYNC</em></div><div class="workflow-chain">${workflowNode('data','▤','Call Session Log','Transcript + status','append')}${workflowArrow('async')}${workflowNode('data','◆','Save Transcript','Drive archive','Google Drive')}${workflowArrow('async')}${workflowNode('chart','▥','Dashboard Update','Live metrics','HTTP Request')}${workflowArrow('async')}${workflowNode('alert','✦','Alert on Failure','Operator channel','Slack','IDLE')}</div></section>
+  </div></div></article><aside class="execution-panel"><div class="table-panel-head"><div><p class="panel-kicker">EXECUTION LOG</p><h3>Latest runs</h3></div><button class="text-button">View all ›</button></div><div class="execution-list"><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001284</strong><small>Inbound call · Aktivasi akun</small></div><b>1.84s</b></div><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001283</strong><small>Inbound call · Kode billing</small></div><b>2.12s</b></div><div class="execution-item"><i class="exec-state warning">!</i><div><strong>Run #001282</strong><small>Escalated · Data NIK</small></div><b>3.48s</b></div><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001281</strong><small>Inbound call · Login</small></div><b>1.63s</b></div></div><div class="workflow-legend"><span><i class="legend-node success"></i>Completed</span><span><i class="legend-node running"></i>Running</span><span><i class="legend-node idle"></i>Idle</span></div></aside></div>`;
+
 const screenTemplates = {
   live: () => `${screenHeader('REAL-TIME OPERATIONS', 'Live Calls', 'Pantau percakapan yang sedang berjalan dan ambil alih jika AI membutuhkan bantuan.', '<button class="primary-button" data-action="simulate-call">＋ Simulate incoming call</button>')}
     <div class="screen-stats">${screenStat('ACTIVE CALLS', '03', 'Semua AI sedang online', 'green')}${screenStat('WAITING QUEUE', '02', 'Rata-rata tunggu 00:18', 'amber')}${screenStat('AI HANDLING', '92%', 'Dari panggilan aktif', 'cyan')}${screenStat('PETUGAS ONLINE', '04', 'Siap mengambil alih', 'violet')}</div>
@@ -47,6 +66,7 @@ const screenTemplates = {
   workflow: () => `${screenHeader('AUTOMATION CONTROL PLANE', 'Workflow Monitor', 'Pantau workflow n8n AI Agent Coretax dari panggilan masuk sampai jawaban atau eskalasi petugas.', '<button class="primary-button" data-action="run-workflow">▶ Run test execution</button>')}
     <div class="workflow-summary"><span class="status-pill live-pill">● WORKFLOW ACTIVE</span><span>Last execution <b>2m 14s ago</b></span><span>Success rate <b class="success-text">98.7%</b></span><span>Avg. execution <b>1.84s</b></span><button class="outline-button" data-action="refresh-workflow">↻ Refresh</button></div>
     <div class="workflow-layout"><article class="workflow-canvas-panel"><div class="workflow-toolbar"><div><p class="panel-kicker">N8N WORKFLOW · CORETAX AI AGENT V1</p><h3>Inbound call → AI answer → human escalation</h3></div><div class="canvas-tools"><button data-action="zoom-out">−</button><span>100%</span><button data-action="zoom-in">＋</button></div></div><div class="n8n-canvas"><div class="canvas-grid"></div><div class="workflow-link link-a"></div><div class="workflow-link link-b"></div><div class="workflow-link link-c"></div><div class="workflow-link link-d"></div><div class="workflow-link link-e"></div><div class="workflow-link link-f"></div><div class="workflow-link link-g"></div><div class="workflow-link link-h"></div><div class="n8n-node node-trigger"><i class="node-icon trigger">◷</i><strong>Incoming Call</strong><small>Webhook / Twilio</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-context"><i class="node-icon context">✎</i><strong>Set Context</strong><small>Caller + session</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-stt"><i class="node-icon voice">◒</i><strong>Speech to Text</strong><small>Whisper / ASR</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-router"><i class="node-icon code">{ }</i><strong>Intent Router</strong><small>Classify question</small><em class="node-running">RUNNING</em></div><div class="n8n-node node-rag"><i class="node-icon search">⌕</i><strong>Coretax RAG</strong><small>3,035 chunks</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-llm"><i class="node-icon brain">✦</i><strong>AI Agent</strong><small>LLM + Guardrails</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-tts"><i class="node-icon voice">◖</i><strong>Text to Speech</strong><small>Return voice response</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-escalate"><i class="node-icon alert">⚠</i><strong>Create Escalation</strong><small>Case + staff queue</small><em class="node-idle">IDLE</em></div><div class="n8n-node node-log"><i class="node-icon data">▤</i><strong>Log Conversation</strong><small>Save transcript</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-notify"><i class="node-icon notify">✉</i><strong>Notify Staff</strong><small>Email / dashboard</small><em class="node-idle">IDLE</em></div></div></article><aside class="execution-panel"><div class="table-panel-head"><div><p class="panel-kicker">EXECUTION LOG</p><h3>Latest runs</h3></div><button class="text-button">View all ›</button></div><div class="execution-list"><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001284</strong><small>Inbound call · Aktivasi akun</small></div><b>1.84s</b></div><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001283</strong><small>Inbound call · Kode billing</small></div><b>2.12s</b></div><div class="execution-item"><i class="exec-state warning">!</i><div><strong>Run #001282</strong><small>Escalated · Data NIK</small></div><b>3.48s</b></div><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001281</strong><small>Inbound call · Login</small></div><b>1.63s</b></div></div><div class="workflow-legend"><span><i class="legend-node success"></i>Completed</span><span><i class="legend-node running"></i>Running</span><span><i class="legend-node idle"></i>Idle</span></div></aside></div>`,
+  workflow: workflowScreen,
   settings: () => `${screenHeader('SYSTEM CONFIGURATION', 'Settings', 'Atur perilaku agent, routing eskalasi, dan koneksi operasional.', '<button class="primary-button" data-action="save-settings">Save changes</button>')}
     <div class="settings-grid"><article class="table-panel settings-panel"><div class="table-panel-head"><div><p class="panel-kicker">AI AGENT</p><h3>Response policy</h3></div><span class="status-pill live-pill">● CONFIGURED</span></div><label class="setting-row"><span><strong>Use official sources only</strong><small>AI menolak jawaban di luar knowledge base.</small></span><input type="checkbox" checked /></label><label class="setting-row"><span><strong>Escalate personal questions</strong><small>Data personal selalu diteruskan ke petugas.</small></span><input type="checkbox" checked /></label><label class="setting-row"><span><strong>Record transcript</strong><small>Simpan transkrip untuk audit dan evaluasi.</small></span><input type="checkbox" checked /></label></article><article class="table-panel settings-panel"><div class="table-panel-head"><div><p class="panel-kicker">OPERATIONS</p><h3>Routing & notifications</h3></div></div><label class="field-label">Escalation team<select><option>Coretax Support Desk</option><option>Taxpayer Service</option></select></label><label class="field-label">Priority threshold<select><option>Personal or transactional</option><option>Low confidence only</option></select></label><label class="field-label">Notification channel<select><option>Dashboard + Email</option><option>Dashboard only</option></select></label></article></div>`,
 };
@@ -116,6 +136,8 @@ document.querySelectorAll('.load-period-picker button').forEach((button) => {
   button.addEventListener('click', () => {
     document.querySelectorAll('.load-period-picker button').forEach((entry) => entry.classList.remove('active'));
     button.classList.add('active');
+    const chartMode = { Harian: 'daily', Mingguan: 'weekly', Bulanan: 'monthly' }[button.dataset.chartPeriod] || 'weekly';
+    renderDotPlot(chartMode);
     notify(`Grafik beban panggilan diubah ke tampilan ${button.dataset.chartPeriod.toLowerCase()}.`);
   });
 });
@@ -124,26 +146,53 @@ document.querySelectorAll('.take-button').forEach((button) => {
   button.addEventListener('click', () => notify('Mode observasi panggilan diaktifkan.'));
 });
 
-function renderDotPlot() {
+const chartProfiles = {
+  daily: {
+    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+    columns: [2, 3, 4, 6, 9, 14, 19, 24, 31, 38, 42, 36, 30, 25, 20, 17, 22, 29, 34, 31, 26, 20, 15, 11, 8, 6, 5, 4, 3, 3, 2, 2, 2, 1, 1],
+    total: '86',
+    headlineDelta: '+8 (+8.2%)',
+    peak: 'Puncak panggilan: 12:00–14:00',
+    delta: '+8.2% dibanding kemarin',
+  },
+  weekly: {
+    labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    columns: [6, 9, 12, 10, 7, 5, 3, 2, 2, 3, 4, 6, 10, 14, 15, 14, 15, 16, 15, 14, 8, 6, 5, 4, 4, 5, 7, 10, 14, 13, 9, 7, 7, 10, 8, 6, 7, 12, 10, 8, 7, 11, 8, 5, 6, 10, 13, 8, 9, 13, 15, 14, 10, 7, 4, 2],
+    total: '524',
+    headlineDelta: '+24 (+4.8%)',
+    peak: 'Puncak panggilan: Rabu, 10:00–12:00',
+    delta: '+4.8% dibanding minggu lalu',
+  },
+  monthly: {
+    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7'],
+    columns: [7, 8, 10, 12, 9, 8, 6, 5, 6, 9, 13, 15, 18, 16, 14, 12, 10, 9, 11, 14, 17, 20, 18, 16, 13, 12, 10, 11, 15, 19, 23, 21, 18, 16, 14, 13, 15, 18, 22, 26, 24, 20, 17, 14, 12, 11, 13, 16, 19, 22, 20, 17, 14, 12, 10, 8],
+    total: '2,184',
+    headlineDelta: '+246 (+12.6%)',
+    peak: 'Puncak panggilan: Week 4, awal periode lapor',
+    delta: '+12.6% dibanding bulan lalu',
+  },
+};
+
+function renderDotPlot(mode = 'weekly') {
   const plot = document.querySelector('.dot-plot');
   if (!plot) return;
 
   const SVG_NS = 'http://www.w3.org/2000/svg';
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  const columns = [
-    6, 9, 12, 10, 7, 5, 3, 2,
-    2, 3, 4, 6, 10, 14, 15, 14,
-    15, 16, 15, 14, 8, 6, 5, 4,
-    4, 5, 7, 10, 14, 13, 9, 7,
-    7, 10, 8, 6, 7, 12, 10, 8,
-    7, 11, 8, 5, 6, 10, 13, 8,
-    9, 13, 15, 14, 10, 7, 4, 2,
-  ];
+  const profile = chartProfiles[mode] || chartProfiles.weekly;
+  const { labels } = profile;
+  const sourceColumns = profile.columns;
+  const sampledColumns = Array.from({ length: 56 }, (_, index) => sourceColumns[Math.floor(index * sourceColumns.length / 56)]);
+  const sampledMax = Math.max(...sampledColumns);
+  const columns = sampledColumns.map((value) => Math.max(1, Math.round((value * 16) / sampledMax)));
   const plotLeft = 53;
   const plotRight = 705;
   const baseline = 144;
   const columnStep = (plotRight - plotLeft) / columns.length;
+  const groupSize = columns.length / labels.length;
+  const maxHeight = Math.max(...columns);
+  const dotStep = maxHeight > 1 ? Math.min(7.2, (baseline - 14) / (maxHeight - 1)) : 7.2;
 
+  if (plot._waveFrame) cancelAnimationFrame(plot._waveFrame);
   plot.replaceChildren();
   [16, 48, 80, 112, 144].forEach((y, index) => {
     const line = document.createElementNS(SVG_NS, 'line');
@@ -167,25 +216,82 @@ function renderDotPlot() {
     for (let dot = 0; dot < height; dot += 1) {
       const circle = document.createElementNS(SVG_NS, 'circle');
       circle.setAttribute('cx', x.toFixed(2));
-      circle.setAttribute('cy', baseline - dot * 7.2);
+      circle.setAttribute('cy', baseline);
       circle.setAttribute('r', '2.35');
       circle.setAttribute('class', dot === height - 1 && index % 5 === 0 ? 'plot-dot accent' : 'plot-dot');
+      circle.style.opacity = '0';
+      circle.dataset.targetCy = String(baseline - dot * dotStep);
+      const dayGroup = Math.floor(index / groupSize);
+      const columnInDay = index % groupSize;
+      circle.dataset.revealStart = String(dayGroup * 22 + columnInDay * 9 + dot * 34);
+      circle.dataset.collapseOffset = String((height - 1 - dot) * 26 + columnInDay * 6 + dayGroup * 10);
       plot.appendChild(circle);
     }
   });
 
-  days.forEach((day, index) => {
+  labels.forEach((day, index) => {
     const label = document.createElementNS(SVG_NS, 'text');
-    label.setAttribute('x', plotLeft + columnStep * (index * 8 + 4));
+    label.setAttribute('x', plotLeft + columnStep * (index * groupSize + groupSize / 2));
     label.setAttribute('y', 178);
     label.setAttribute('text-anchor', 'middle');
     label.setAttribute('class', 'plot-day-label');
     label.textContent = day;
     plot.appendChild(label);
   });
+
+  const footer = plot.closest('.load-panel')?.querySelector('.chart-footer');
+  const loadTitle = plot.closest('.load-panel')?.querySelector('.load-title h3');
+  if (loadTitle) loadTitle.innerHTML = `${profile.total} <span>calls</span><small>${profile.headlineDelta}</small>`;
+  if (footer) {
+    footer.querySelector('span:first-child').innerHTML = `<i class="pulse"></i> ${profile.peak}`;
+    footer.querySelector('span:last-child').textContent = profile.delta;
+  }
+
+  const dots = [...plot.querySelectorAll('.plot-dot')];
+  const revealDuration = 110;
+  const resetDuration = 180;
+  const holdDuration = 2500;
+  const maxReveal = Math.max(...dots.map((circle) => Number(circle.dataset.revealStart) + revealDuration));
+  const collapseBase = maxReveal + holdDuration;
+  const maxCollapse = Math.max(...dots.map((circle) => Number(circle.dataset.collapseOffset)));
+  const cycleDuration = collapseBase + maxCollapse + resetDuration;
+
+  const loopStartedAt = performance.now();
+  const revealDots = (now) => {
+    const phase = (now - loopStartedAt) % cycleDuration;
+    dots.forEach((circle) => {
+      const start = Number(circle.dataset.revealStart);
+      const targetCy = Number(circle.dataset.targetCy);
+      const distance = baseline - targetCy;
+      if (phase < maxReveal) {
+        const progress = Math.min(1, Math.max(0, (phase - start) / revealDuration));
+        const eased = 1 - ((1 - progress) ** 3);
+        circle.setAttribute('cy', (baseline - distance * eased).toFixed(2));
+        circle.style.opacity = String(eased);
+      } else if (phase < collapseBase) {
+        circle.setAttribute('cy', targetCy.toFixed(2));
+        circle.style.opacity = '1';
+      } else {
+        const collapseStart = collapseBase + Number(circle.dataset.collapseOffset);
+        const collapseProgress = Math.min(1, Math.max(0, (phase - collapseStart) / resetDuration));
+        if (collapseProgress === 0) {
+          circle.setAttribute('cy', targetCy.toFixed(2));
+          circle.style.opacity = '1';
+        } else if (collapseProgress < 1) {
+          circle.setAttribute('cy', (targetCy + distance * collapseProgress).toFixed(2));
+          circle.style.opacity = String(1 - collapseProgress);
+        } else {
+          circle.setAttribute('cy', baseline);
+          circle.style.opacity = '0';
+        }
+      }
+    });
+    plot._waveFrame = requestAnimationFrame(revealDots);
+  };
+  plot._waveFrame = requestAnimationFrame(revealDots);
 }
 
-renderDotPlot();
+renderDotPlot('weekly');
 
 async function updateSystemStatus() {
   const status = document.querySelector('#system-status');

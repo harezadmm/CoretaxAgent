@@ -1,0 +1,7 @@
+beautifulsoup4>=4.12
+fastapi>=0.115
+ftfy>=6.2
+markdownify>=0.14
+openai>=1.60
+pypdf>=5.1
+python-dotenv>=1.0

@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+work/
+tests/
+tools/
+knowledge/source_files/**
+.vercel/
+*.py[cod]

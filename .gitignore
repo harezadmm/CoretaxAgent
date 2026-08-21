@@ -2,7 +2,12 @@
 .venv/
 __pycache__/
 .pytest_cache/
+.vercel/
+.python-version
+uv.lock
 *.py[cod]
 *.egg-info/
 work/
 knowledge/source_files/html/
+
+.vercel
