@@ -73,7 +73,8 @@ function workflowIcon(title, fallback) {
 function iconClassForWorkflowKey(key) { return `icon-${key}`; }
 
 function workflowNode(iconClass, icon, title, subtitle, meta, state = 'SUCCESS') {
-  return `<div class="n8n-node flow-node"><span class="workflow-rendered-icon">${workflowIcon(title, icon)}</span><strong>${title}</strong><small>${subtitle}</small><em class="node-${state.toLowerCase()}">${state}</em>${meta ? `<span class="flow-node-meta">${meta}</span>` : ''}</div>`;
+  const triggerMark = /Incoming Call/.test(title) ? '<span class="workflow-trigger-mark" aria-hidden="true">ϟ</span>' : '';
+  return `<div class="n8n-node flow-node">${triggerMark}<span class="workflow-rendered-icon">${workflowIcon(title, icon)}</span><strong>${title}</strong><small>${subtitle}</small><em class="node-${state.toLowerCase()}">${state}</em>${meta ? `<span class="flow-node-meta">${meta}</span>` : ''}</div>`;
 }
 
 function workflowArrow(type = 'sync') {
