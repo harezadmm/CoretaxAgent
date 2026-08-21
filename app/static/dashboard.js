@@ -1,0 +1,206 @@
+const toast = document.querySelector('.toast');
+
+function notify(message) {
+  toast.textContent = message;
+  toast.classList.add('visible');
+  window.clearTimeout(window.toastTimer);
+  window.toastTimer = window.setTimeout(() => toast.classList.remove('visible'), 2400);
+}
+
+const screenStage = document.querySelector('#screen-stage');
+const overviewView = document.querySelector('#overview');
+const viewLabels = {
+  overview: 'Support Operations',
+  live: 'Live Calls',
+  escalations: 'Escalations',
+  history: 'Call History',
+  knowledge: 'Knowledge Base',
+  analytics: 'Analytics',
+  workflow: 'Workflow Monitor',
+  settings: 'Settings',
+};
+
+function screenHeader(kicker, title, description, action = '') {
+  return `<div class="screen-heading"><div><p class="eyebrow">${kicker}</p><h2>${title}</h2><p class="subtle">${description}</p></div>${action}</div>`;
+}
+
+function screenStat(label, value, note, tone = 'cyan') {
+  return `<article class="screen-stat"><span class="stat-mark ${tone}"></span><p>${label}</p><strong>${value}</strong><small>${note}</small></article>`;
+}
+
+const screenTemplates = {
+  live: () => `${screenHeader('REAL-TIME OPERATIONS', 'Live Calls', 'Pantau percakapan yang sedang berjalan dan ambil alih jika AI membutuhkan bantuan.', '<button class="primary-button" data-action="simulate-call">＋ Simulate incoming call</button>')}
+    <div class="screen-stats">${screenStat('ACTIVE CALLS', '03', 'Semua AI sedang online', 'green')}${screenStat('WAITING QUEUE', '02', 'Rata-rata tunggu 00:18', 'amber')}${screenStat('AI HANDLING', '92%', 'Dari panggilan aktif', 'cyan')}${screenStat('PETUGAS ONLINE', '04', 'Siap mengambil alih', 'violet')}</div>
+    <div class="two-column-screen"><article class="table-panel"><div class="table-panel-head"><div><p class="panel-kicker">LIVE QUEUE</p><h3>Active conversations</h3></div><span class="status-pill live-pill">● LIVE</span></div><div class="live-call-cards"><div class="live-call-card"><div class="caller-icon">A</div><div><strong>08••• 8214</strong><span>Aktivasi akun Coretax</span></div><b>02:14</b><em class="answering">ANSWERING</em><button data-action="observe">Observe</button></div><div class="live-call-card"><div class="caller-icon secondary">R</div><div><strong>08••• 4416</strong><span>Pelaporan SPT tahunan</span></div><b>01:38</b><em class="searching">SEARCHING KB</em><button data-action="observe">Observe</button></div><div class="live-call-card"><div class="caller-icon third">S</div><div><strong>08••• 9031</strong><span>Login Coretax</span></div><b>00:47</b><em class="answering">ANSWERING</em><button data-action="takeover">Take over</button></div></div></article><article class="table-panel transcript-panel"><div class="table-panel-head"><div><p class="panel-kicker">SELECTED CALL · 08••• 8214</p><h3>Live transcript</h3></div><span class="signal">◉ 42 ms</span></div><div class="transcript"><div class="transcript-line ai"><small>AI · 10:42:08</small><p>Selamat datang di layanan informasi Coretax. Ada yang bisa saya bantu?</p></div><div class="transcript-line caller"><small>CALLER · 10:42:16</small><p>Saya mau aktivasi akun Coretax, tapi foto saya selalu gagal.</p></div><div class="transcript-line ai"><small>AI · 10:42:22</small><p>Baik, saya sedang mencari panduan aktivasi akun yang sesuai.</p></div></div><button class="outline-button" data-action="takeover">Take over conversation ↗</button></article></div>`,
+  escalations: () => `${screenHeader('ACTION REQUIRED', 'Escalations', 'Kasus yang belum dapat diselesaikan AI dan membutuhkan tindak lanjut petugas.', '<button class="primary-button" data-action="refresh">↻ Refresh queue</button>')}
+    <div class="screen-stats">${screenStat('OPEN CASES', '12', '＋3 sejak 1 jam terakhir', 'amber')}${screenStat('HIGH PRIORITY', '03', 'Perlu respons segera', 'red')}${screenStat('AVG. RESPONSE', '04:18', '−32s dari kemarin', 'green')}${screenStat('RESOLVED TODAY', '38', '91% selesai hari ini', 'cyan')}</div>
+    <article class="table-panel"><div class="table-panel-head"><div><p class="panel-kicker">CASE QUEUE</p><h3>Needs human attention</h3></div><div class="filter-pills"><button class="active">All 12</button><button>High 03</button><button>Mine 02</button></div></div><div class="data-table"><div class="data-row data-head"><span>CASE</span><span>TOPIC</span><span>REASON</span><span>AGE</span><span>STATUS</span><span></span></div><div class="data-row"><span><b class="case-id">#CX-0182</b><small>08••• 4218</small></span><span>Aktivasi akun</span><span>Foto identitas gagal divalidasi</span><span class="mono">04m</span><span><em class="priority-high">HIGH</em></span><button class="row-action" data-action="assign">Assign</button></div><div class="data-row"><span><b class="case-id">#CX-0181</b><small>08••• 1903</small></span><span>Kode billing</span><span>Tidak ditemukan pada knowledge base</span><span class="mono">12m</span><span><em class="priority-medium">MED</em></span><button class="row-action" data-action="assign">Assign</button></div><div class="data-row"><span><b class="case-id">#CX-0179</b><small>08••• 8881</small></span><span>Data NIK</span><span>Memerlukan pengecekan data personal</span><span class="mono">18m</span><span><em class="priority-medium">MED</em></span><button class="row-action" data-action="assign">Assign</button></div><div class="data-row"><span><b class="case-id">#CX-0176</b><small>08••• 5570</small></span><span>Pelaporan SPT</span><span>Pengguna meminta keputusan pajak</span><span class="mono">26m</span><span><em class="priority-low">LOW</em></span><button class="row-action" data-action="assign">Assign</button></div></div></article>`,
+  history: () => `${screenHeader('SERVICE RECORDS', 'Call History', 'Riwayat panggilan, transkrip, dan hasil penanganan layanan Coretax.', '<label class="screen-search">⌕ <input placeholder="Search caller or topic..." /></label>')}
+    <div class="screen-stats">${screenStat('TOTAL CALLS', '1,284', '7 hari terakhir', 'cyan')}${screenStat('RESOLVED', '1,106', '86.1% resolved', 'green')}${screenStat('ESCALATED', '178', '13.9% to staff', 'amber')}${screenStat('AVG. HANDLE TIME', '03:42', '−18s improvement', 'violet')}</div>
+    <article class="table-panel"><div class="table-panel-head"><div><p class="panel-kicker">ALL INTERACTIONS</p><h3>Recent call history</h3></div><div class="filter-pills"><button class="active">Last 7 days</button><button>Resolved</button><button>Escalated</button></div></div><div class="data-table history-table"><div class="data-row data-head"><span>CALL ID</span><span>CALLER</span><span>TOPIC</span><span>DATE</span><span>RESULT</span><span></span></div><div class="data-row"><span class="case-id">#CALL-7421</span><span>08••• 8214</span><span>Aktivasi akun</span><span class="mono">Today 10:42</span><span><em class="resolved">RESOLVED AI</em></span><button class="row-action" data-action="details">Details</button></div><div class="data-row"><span class="case-id">#CALL-7420</span><span>08••• 4416</span><span>Pelaporan SPT</span><span class="mono">Today 10:39</span><span><em class="priority-medium">ESCALATED</em></span><button class="row-action" data-action="details">Details</button></div><div class="data-row"><span class="case-id">#CALL-7419</span><span>08••• 9031</span><span>Login Coretax</span><span class="mono">Today 10:34</span><span><em class="resolved">RESOLVED AI</em></span><button class="row-action" data-action="details">Details</button></div><div class="data-row"><span class="case-id">#CALL-7418</span><span>08••• 5570</span><span>Kode otorisasi DJP</span><span class="mono">Today 10:30</span><span><em class="resolved">RESOLVED AI</em></span><button class="row-action" data-action="details">Details</button></div></div></article>`,
+  knowledge: () => `${screenHeader('RETRIEVAL SOURCES', 'Knowledge Base', 'Kelola dokumen resmi yang digunakan AI untuk menjawab pertanyaan Coretax.', '<button class="primary-button" data-action="upload">＋ Add source</button>')}
+    <div class="screen-stats">${screenStat('ACTIVE SOURCES', '284', '230 FAQ + 54 PDF', 'green')}${screenStat('RAG CHUNKS', '3,035', 'Deduplicated content', 'cyan')}${screenStat('LAST SYNC', '12m ago', 'All sources up to date', 'violet')}${screenStat('NEEDS REVIEW', '06', 'Marked by operators', 'amber')}</div>
+    <div class="knowledge-grid"><article class="table-panel source-list"><div class="table-panel-head"><div><p class="panel-kicker">SOURCE LIBRARY</p><h3>Official Coretax content</h3></div><label class="screen-search">⌕ <input placeholder="Search documents..." /></label></div><div class="source-item"><span class="file-icon pdf">PDF</span><div><strong>BUKU MANUAL CORETAX 2024</strong><small>Official DJP · 1,530 chunks · updated 12m ago</small></div><em class="source-live">ACTIVE</em><button class="row-action" data-action="open-source">Open</button></div><div class="source-item"><span class="file-icon faq">FAQ</span><div><strong>CORETAXPEDIA FAQ COLLECTION</strong><small>Official FAQ · 230 pages · updated 12m ago</small></div><em class="source-live">ACTIVE</em><button class="row-action" data-action="open-source">Open</button></div><div class="source-item"><span class="file-icon pdf">PDF</span><div><strong>PANDUAN AKTIVASI AKUN 2025</strong><small>Official DJP · 75 chunks · updated yesterday</small></div><em class="source-review">REVIEW</em><button class="row-action" data-action="open-source">Open</button></div></article><article class="table-panel source-health"><div class="table-panel-head"><div><p class="panel-kicker">RAG HEALTH</p><h3>Retrieval quality</h3></div><span class="status-pill live-pill">● HEALTHY</span></div><div class="health-score"><strong>98.4</strong><span>/ 100</span></div><div class="health-bars"><div><span>Source coverage</span><b>100%</b><i><em style="width:100%"></em></i></div><div><span>Duplicate control</span><b>96%</b><i><em style="width:96%"></em></i></div><div><span>Freshness</span><b>98%</b><i><em style="width:98%"></em></i></div></div><button class="outline-button" data-action="sync">↻ Sync official sources</button></article></div>`,
+  analytics: () => `${screenHeader('SERVICE INTELLIGENCE', 'Analytics', 'Pahami pola pertanyaan pengguna dan efektivitas AI dari waktu ke waktu.', '<div class="period-picker screen-period"><button>Day</button><button class="active">7 days</button><button>Month</button></div>')}
+    <div class="screen-stats">${screenStat('CONTAINMENT RATE', '86.1%', '+4.8% this period', 'green')}${screenStat('AVG. RESPONSE', '1.8s', '−0.3s improvement', 'cyan')}${screenStat('CUSTOMER SENTIMENT', '4.6/5', 'Based on 312 ratings', 'violet')}${screenStat('TOPIC COVERAGE', '92%', 'Official KB match', 'amber')}</div>
+    <div class="analytics-grid"><article class="table-panel analytics-chart"><div class="table-panel-head"><div><p class="panel-kicker">QUESTION VOLUME</p><h3>Topics over time</h3></div><span class="muted-label">7 DAYS · 1,284 CALLS</span></div><div class="mini-bars"><i style="height:43%"></i><i style="height:58%"></i><i style="height:48%"></i><i style="height:76%"></i><i style="height:66%"></i><i style="height:93%"></i><i style="height:81%"></i><i style="height:100%"></i><i style="height:87%"></i><i style="height:72%"></i><i style="height:90%"></i><i style="height:61%"></i></div><div class="mini-axis"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div></article><article class="table-panel"><div class="table-panel-head"><div><p class="panel-kicker">TOP INTENTS</p><h3>What users ask</h3></div></div><ol class="rank-list"><li><span>01</span><strong>Aktivasi akun</strong><b>32%</b></li><li><span>02</span><strong>Kode otorisasi</strong><b>24%</b></li><li><span>03</span><strong>Kode billing</strong><b>18%</b></li><li><span>04</span><strong>Pelaporan SPT</strong><b>14%</b></li><li><span>05</span><strong>Login Coretax</strong><b>12%</b></li></ol></article></div>`,
+  workflow: () => `${screenHeader('AUTOMATION CONTROL PLANE', 'Workflow Monitor', 'Pantau workflow n8n AI Agent Coretax dari panggilan masuk sampai jawaban atau eskalasi petugas.', '<button class="primary-button" data-action="run-workflow">▶ Run test execution</button>')}
+    <div class="workflow-summary"><span class="status-pill live-pill">● WORKFLOW ACTIVE</span><span>Last execution <b>2m 14s ago</b></span><span>Success rate <b class="success-text">98.7%</b></span><span>Avg. execution <b>1.84s</b></span><button class="outline-button" data-action="refresh-workflow">↻ Refresh</button></div>
+    <div class="workflow-layout"><article class="workflow-canvas-panel"><div class="workflow-toolbar"><div><p class="panel-kicker">N8N WORKFLOW · CORETAX AI AGENT V1</p><h3>Inbound call → AI answer → human escalation</h3></div><div class="canvas-tools"><button data-action="zoom-out">−</button><span>100%</span><button data-action="zoom-in">＋</button></div></div><div class="n8n-canvas"><div class="canvas-grid"></div><div class="workflow-link link-a"></div><div class="workflow-link link-b"></div><div class="workflow-link link-c"></div><div class="workflow-link link-d"></div><div class="workflow-link link-e"></div><div class="workflow-link link-f"></div><div class="workflow-link link-g"></div><div class="workflow-link link-h"></div><div class="n8n-node node-trigger"><i class="node-icon trigger">◷</i><strong>Incoming Call</strong><small>Webhook / Twilio</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-context"><i class="node-icon context">✎</i><strong>Set Context</strong><small>Caller + session</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-stt"><i class="node-icon voice">◒</i><strong>Speech to Text</strong><small>Whisper / ASR</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-router"><i class="node-icon code">{ }</i><strong>Intent Router</strong><small>Classify question</small><em class="node-running">RUNNING</em></div><div class="n8n-node node-rag"><i class="node-icon search">⌕</i><strong>Coretax RAG</strong><small>3,035 chunks</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-llm"><i class="node-icon brain">✦</i><strong>AI Agent</strong><small>LLM + Guardrails</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-tts"><i class="node-icon voice">◖</i><strong>Text to Speech</strong><small>Return voice response</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-escalate"><i class="node-icon alert">⚠</i><strong>Create Escalation</strong><small>Case + staff queue</small><em class="node-idle">IDLE</em></div><div class="n8n-node node-log"><i class="node-icon data">▤</i><strong>Log Conversation</strong><small>Save transcript</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-notify"><i class="node-icon notify">✉</i><strong>Notify Staff</strong><small>Email / dashboard</small><em class="node-idle">IDLE</em></div></div></article><aside class="execution-panel"><div class="table-panel-head"><div><p class="panel-kicker">EXECUTION LOG</p><h3>Latest runs</h3></div><button class="text-button">View all ›</button></div><div class="execution-list"><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001284</strong><small>Inbound call · Aktivasi akun</small></div><b>1.84s</b></div><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001283</strong><small>Inbound call · Kode billing</small></div><b>2.12s</b></div><div class="execution-item"><i class="exec-state warning">!</i><div><strong>Run #001282</strong><small>Escalated · Data NIK</small></div><b>3.48s</b></div><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001281</strong><small>Inbound call · Login</small></div><b>1.63s</b></div></div><div class="workflow-legend"><span><i class="legend-node success"></i>Completed</span><span><i class="legend-node running"></i>Running</span><span><i class="legend-node idle"></i>Idle</span></div></aside></div>`,
+  settings: () => `${screenHeader('SYSTEM CONFIGURATION', 'Settings', 'Atur perilaku agent, routing eskalasi, dan koneksi operasional.', '<button class="primary-button" data-action="save-settings">Save changes</button>')}
+    <div class="settings-grid"><article class="table-panel settings-panel"><div class="table-panel-head"><div><p class="panel-kicker">AI AGENT</p><h3>Response policy</h3></div><span class="status-pill live-pill">● CONFIGURED</span></div><label class="setting-row"><span><strong>Use official sources only</strong><small>AI menolak jawaban di luar knowledge base.</small></span><input type="checkbox" checked /></label><label class="setting-row"><span><strong>Escalate personal questions</strong><small>Data personal selalu diteruskan ke petugas.</small></span><input type="checkbox" checked /></label><label class="setting-row"><span><strong>Record transcript</strong><small>Simpan transkrip untuk audit dan evaluasi.</small></span><input type="checkbox" checked /></label></article><article class="table-panel settings-panel"><div class="table-panel-head"><div><p class="panel-kicker">OPERATIONS</p><h3>Routing & notifications</h3></div></div><label class="field-label">Escalation team<select><option>Coretax Support Desk</option><option>Taxpayer Service</option></select></label><label class="field-label">Priority threshold<select><option>Personal or transactional</option><option>Low confidence only</option></select></label><label class="field-label">Notification channel<select><option>Dashboard + Email</option><option>Dashboard only</option></select></label></article></div>`,
+};
+
+function navigateToView(view) {
+  document.querySelectorAll('.nav-item').forEach((entry) => entry.classList.toggle('active', entry.dataset.view === view));
+  document.querySelector('#page-title').textContent = viewLabels[view] || view;
+  if (view === 'overview') {
+    overviewView.hidden = false;
+    screenStage.hidden = true;
+    renderDotPlot();
+    return;
+  }
+  overviewView.hidden = true;
+  screenStage.hidden = false;
+  screenStage.innerHTML = screenTemplates[view] ? screenTemplates[view]() : screenTemplates.overview?.() || '';
+  screenStage.querySelectorAll('.filter-pills button').forEach((button) => button.addEventListener('click', () => {
+    screenStage.querySelectorAll('.filter-pills button').forEach((entry) => entry.classList.remove('active'));
+    button.classList.add('active');
+    notify(`Filter ${button.textContent} dipilih.`);
+  }));
+  notify(`${viewLabels[view]} dibuka.`);
+}
+
+document.querySelectorAll('.nav-item').forEach((item) => {
+  item.addEventListener('click', () => navigateToView(item.dataset.view));
+});
+
+screenStage.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-action]');
+  if (!button) return;
+  const messages = {
+    'simulate-call': 'Panggilan demo masuk ke antrean live.',
+    observe: 'Mode observasi percakapan diaktifkan.',
+    takeover: 'Petugas mengambil alih percakapan.',
+    assign: 'Kasus ditugaskan ke Hariz A.',
+    details: 'Detail transkrip dibuka.',
+    upload: 'Dialog sumber knowledge base siap digunakan.',
+    'open-source': 'Dokumen sumber dibuka.',
+    sync: 'Sinkronisasi sumber resmi dimulai.',
+    refresh: 'Antrean diperbarui.',
+    'refresh-workflow': 'Status eksekusi n8n diperbarui.',
+    'run-workflow': 'Test execution n8n sedang berjalan.',
+    'zoom-in': 'Canvas diperbesar.',
+    'zoom-out': 'Canvas diperkecil.',
+    'save-settings': 'Pengaturan tersimpan.',
+  };
+  notify(messages[button.dataset.action] || 'Aksi dijalankan.');
+});
+
+document.querySelectorAll('[data-view-target]').forEach((button) => {
+  button.addEventListener('click', () => {
+    const target = button.dataset.viewTarget;
+    document.querySelector(`.nav-item[data-view="${target}"]`)?.click();
+  });
+});
+
+document.querySelectorAll('.period-picker button').forEach((button) => {
+  button.addEventListener('click', () => {
+    document.querySelectorAll('.period-picker button').forEach((entry) => entry.classList.remove('active'));
+    button.classList.add('active');
+    notify(`Rentang data diubah ke ${button.dataset.period}.`);
+  });
+});
+
+document.querySelectorAll('.load-period-picker button').forEach((button) => {
+  button.addEventListener('click', () => {
+    document.querySelectorAll('.load-period-picker button').forEach((entry) => entry.classList.remove('active'));
+    button.classList.add('active');
+    notify(`Grafik beban panggilan diubah ke tampilan ${button.dataset.chartPeriod.toLowerCase()}.`);
+  });
+});
+
+document.querySelectorAll('.take-button').forEach((button) => {
+  button.addEventListener('click', () => notify('Mode observasi panggilan diaktifkan.'));
+});
+
+function renderDotPlot() {
+  const plot = document.querySelector('.dot-plot');
+  if (!plot) return;
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const columns = [
+    6, 9, 12, 10, 7, 5, 3, 2,
+    2, 3, 4, 6, 10, 14, 15, 14,
+    15, 16, 15, 14, 8, 6, 5, 4,
+    4, 5, 7, 10, 14, 13, 9, 7,
+    7, 10, 8, 6, 7, 12, 10, 8,
+    7, 11, 8, 5, 6, 10, 13, 8,
+    9, 13, 15, 14, 10, 7, 4, 2,
+  ];
+  const plotLeft = 53;
+  const plotRight = 705;
+  const baseline = 144;
+  const columnStep = (plotRight - plotLeft) / columns.length;
+
+  plot.replaceChildren();
+  [16, 48, 80, 112, 144].forEach((y, index) => {
+    const line = document.createElementNS(SVG_NS, 'line');
+    line.setAttribute('x1', plotLeft);
+    line.setAttribute('x2', plotRight);
+    line.setAttribute('y1', y);
+    line.setAttribute('y2', y);
+    line.setAttribute('class', 'plot-grid');
+    plot.appendChild(line);
+
+    const label = document.createElementNS(SVG_NS, 'text');
+    label.setAttribute('x', 0);
+    label.setAttribute('y', y + 3);
+    label.setAttribute('class', 'plot-y-label');
+    label.textContent = String(80 - index * 20);
+    plot.appendChild(label);
+  });
+
+  columns.forEach((height, index) => {
+    const x = plotLeft + columnStep * index + columnStep / 2;
+    for (let dot = 0; dot < height; dot += 1) {
+      const circle = document.createElementNS(SVG_NS, 'circle');
+      circle.setAttribute('cx', x.toFixed(2));
+      circle.setAttribute('cy', baseline - dot * 7.2);
+      circle.setAttribute('r', '2.35');
+      circle.setAttribute('class', dot === height - 1 && index % 5 === 0 ? 'plot-dot accent' : 'plot-dot');
+      plot.appendChild(circle);
+    }
+  });
+
+  days.forEach((day, index) => {
+    const label = document.createElementNS(SVG_NS, 'text');
+    label.setAttribute('x', plotLeft + columnStep * (index * 8 + 4));
+    label.setAttribute('y', 178);
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('class', 'plot-day-label');
+    label.textContent = day;
+    plot.appendChild(label);
+  });
+}
+
+renderDotPlot();
+
+async function updateSystemStatus() {
+  const status = document.querySelector('#system-status');
+  const count = document.querySelector('#knowledge-count');
+  try {
+    const response = await fetch('/health');
+    if (!response.ok) throw new Error('Health check failed');
+    const health = await response.json();
+    status.textContent = health.status === 'ok' ? 'SYSTEM ONLINE' : 'SYSTEM CHECK';
+    count.textContent = `${health.knowledge_chunks.toLocaleString('id-ID')} knowledge chunks ready`;
+  } catch {
+    status.textContent = 'SYSTEM OFFLINE';
+    status.style.color = '#ff7070';
+    count.textContent = 'API belum dapat dihubungi';
+  }
+}
+
+updateSystemStatus();

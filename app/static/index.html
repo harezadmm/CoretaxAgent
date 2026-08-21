@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coretax Agent — Support Operations</title>
+    <link rel="stylesheet" href="/static/dashboard.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navigasi utama">
+        <a class="brand" href="#overview" aria-label="Coretax Agent overview">
+          <span class="brand-mark">✦</span>
+          <span>CORETAX<br /><em>AGENT</em></span>
+        </a>
+
+        <nav class="nav-list">
+          <button class="nav-item active" data-view="overview"><span>▣</span> Overview</button>
+          <button class="nav-item" data-view="live"><span>◉</span> Live Calls <b>03</b></button>
+          <button class="nav-item" data-view="escalations"><span>⚠</span> Escalations <b class="alert-count">12</b></button>
+          <button class="nav-item" data-view="history"><span>▤</span> Call History</button>
+          <button class="nav-item" data-view="knowledge"><span>⌕</span> Knowledge Base</button>
+          <button class="nav-item" data-view="analytics"><span>▥</span> Analytics</button>
+          <button class="nav-item" data-view="workflow"><span>⌁</span> Workflow <b class="workflow-live">LIVE</b></button>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <button class="nav-item" data-view="settings"><span>⚙</span> Settings</button>
+          <div class="system-card">
+            <div class="system-line"><span class="status-dot"></span> SYSTEM STATUS</div>
+            <div class="system-value" id="system-status">CHECKING</div>
+            <div class="system-meta" id="knowledge-count">Knowledge base loading</div>
+          </div>
+          <div class="user-row">
+            <div class="avatar avatar-small">HA</div>
+            <div><strong>Hariz A.</strong><small>Support Operator</small></div>
+            <span class="online-dot" title="Online"></span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p class="breadcrumb">DASHBOARD <span>›</span> OVERVIEW</p>
+            <h1 id="page-title">Support Operations</h1>
+          </div>
+          <div class="top-actions">
+            <label class="search-box"><span>⌕</span><input type="search" placeholder="Search calls, topics..." /></label>
+            <button class="icon-button" aria-label="Notifikasi">◌<i></i></button>
+            <div class="avatar">HA</div>
+          </div>
+        </header>
+
+        <section class="dashboard-view" id="overview">
+          <div class="overview-heading">
+            <div><p class="eyebrow">CORETAX AI VOICE SUPPORT</p><h2>Overview</h2><p class="subtle">Pantau bantuan pengguna, beban panggilan, dan eskalasi petugas.</p></div>
+            <div class="period-picker" role="group" aria-label="Pilih periode">
+              <button data-period="Hari ini">Day</button><button class="active" data-period="7 hari">7 days</button><button data-period="30 hari">Month</button>
+            </div>
+          </div>
+
+          <section class="metric-grid" aria-label="Ringkasan layanan">
+            <article class="metric-card"><div class="metric-icon green">↙</div><p>PANGGILAN MASUK</p><strong>524</strong><small><span class="up">+24</span> dalam 7 hari</small><span class="scanline"></span></article>
+            <article class="metric-card"><div class="metric-icon cyan">✦</div><p>DITANGANI AI</p><strong>486</strong><small><span class="up">92.7%</span> selesai otomatis</small><span class="scanline"></span></article>
+            <article class="metric-card"><div class="metric-icon amber">⚠</div><p>PERLU ESKALASI</p><strong>12</strong><small><span class="warm">03</span> prioritas tinggi</small><span class="scanline"></span></article>
+            <article class="metric-card"><div class="metric-icon violet">◷</div><p>RATA-RATA DURASI</p><strong>03:42</strong><small><span class="up">−18s</span> dari minggu lalu</small><span class="scanline"></span></article>
+          </section>
+
+          <section class="dashboard-grid">
+            <article class="panel load-panel">
+              <div class="panel-header">
+                <div class="load-title"><p class="panel-kicker">CALL CENTER LOAD</p><h3>524 <span>calls</span><small>+24 (+4.8%)</small></h3><p class="load-subtitle">Panggilan masuk yang ditangani AI dan petugas.</p></div>
+                <div class="load-period-picker" role="group" aria-label="Pilih periode grafik beban panggilan"><button data-chart-period="Harian">Daily</button><button class="active" data-chart-period="Mingguan">Weekly</button><button data-chart-period="Bulanan">Monthly</button></div>
+              </div>
+              <div class="chart-scale"><span>80</span><span>60</span><span>40</span><span>20</span><span>0</span></div>
+              <div class="reference-chart" aria-label="Tren volume panggilan Coretax selama tujuh hari">
+                <svg class="dot-plot" viewBox="0 0 720 190" preserveAspectRatio="none" role="img" aria-label="Grafik titik volume panggilan mingguan"></svg>
+              </div>
+              <div class="chart-footer"><span><i class="pulse"></i> Puncak panggilan: Rabu, 10:00—12:00</span><span>+4.8% dibanding minggu lalu</span></div>
+            </article>
+
+            <article class="panel resolution-panel">
+              <div class="panel-header"><div><p class="panel-kicker">AI PERFORMANCE</p><h3>Resolution Rate</h3></div><button class="text-button">View details ›</button></div>
+              <div class="resolution-main"><div class="ascii-ring" aria-label="92.7 persen resolved"><span>92.7<small>%</small></span></div><div><strong>AI dapat menjawab</strong><p class="subtle">Sebagian besar pertanyaan berdasarkan sumber resmi.</p></div></div>
+              <div class="progress-block"><div><span>Jawaban AI</span><b>486</b></div><div class="progress"><i style="width:92.7%"></i></div></div>
+              <div class="progress-block"><div><span>Eskalasi petugas</span><b>38</b></div><div class="progress muted"><i style="width:7.3%"></i></div></div>
+            </article>
+
+            <article class="panel escalation-panel">
+              <div class="panel-header"><div><p class="panel-kicker">ACTION REQUIRED</p><h3>Recent Escalations <span class="badge">12</span></h3></div><button class="text-button" data-view-target="escalations">Open queue ›</button></div>
+              <div class="case-list">
+                <button class="case-item"><span class="case-priority high"></span><span><strong>Gagal aktivasi akun</strong><small>08••• 4218 · 4 min ago</small></span><em>HIGH</em></button>
+                <button class="case-item"><span class="case-priority medium"></span><span><strong>Status kode billing</strong><small>08••• 1903 · 12 min ago</small></span><em>MED</em></button>
+                <button class="case-item"><span class="case-priority medium"></span><span><strong>Data NIK tidak sinkron</strong><small>08••• 8881 · 18 min ago</small></span><em>MED</em></button>
+              </div>
+            </article>
+
+            <article class="panel topic-panel">
+              <div class="panel-header"><div><p class="panel-kicker">KNOWLEDGE INSIGHT</p><h3>Top Questions</h3></div><button class="text-button">Analytics ›</button></div>
+              <ol class="topic-list">
+                <li><span>01</span><div><strong>Aktivasi akun Coretax</strong><div class="micro-bar"><i style="width:88%"></i></div></div><b>128</b></li>
+                <li><span>02</span><div><strong>Kode otorisasi DJP</strong><div class="micro-bar"><i style="width:67%"></i></div></div><b>97</b></li>
+                <li><span>03</span><div><strong>Pembuatan kode billing</strong><div class="micro-bar"><i style="width:53%"></i></div></div><b>76</b></li>
+              </ol>
+            </article>
+          </section>
+
+          <section class="panel live-panel">
+            <div class="panel-header"><div><p class="panel-kicker"><i class="live-dot"></i> LIVE MONITORING</p><h3>Active AI Calls</h3></div><button class="text-button" data-view-target="live">Manage calls ›</button></div>
+            <div class="call-table" role="table" aria-label="Panggilan AI yang aktif">
+              <div class="table-row table-label" role="row"><span>CALLER</span><span>TOPIC</span><span>DURATION</span><span>AI STATUS</span><span></span></div>
+              <div class="table-row" role="row"><span><i class="caller-icon">A</i>08••• 8214</span><span>Aktivasi akun</span><span class="mono">02:14</span><span><em class="answering">● ANSWERING</em></span><button class="take-button">Observe</button></div>
+              <div class="table-row" role="row"><span><i class="caller-icon secondary">R</i>08••• 4416</span><span>Pelaporan SPT</span><span class="mono">01:38</span><span><em class="searching">◌ SEARCHING KB</em></span><button class="take-button">Observe</button></div>
+              <div class="table-row" role="row"><span><i class="caller-icon third">S</i>08••• 9031</span><span>Login Coretax</span><span class="mono">00:47</span><span><em class="answering">● ANSWERING</em></span><button class="take-button">Observe</button></div>
+            </div>
+          </section>
+        </section>
+        <section class="screen-stage" id="screen-stage" hidden></section>
+      </main>
+    </div>
+    <div class="toast" role="status" aria-live="polite"></div>
+    <script src="/static/dashboard.js"></script>
+  </body>
+</html>

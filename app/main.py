@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.agent import CoretaxAgent
 from app.config import get_settings
@@ -16,6 +20,15 @@ app = FastAPI(
     version="0.1.0",
 )
 
+STATIC_DIR = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/", include_in_schema=False)
+def dashboard() -> FileResponse:
+    """Serve the local Coretax support-operations dashboard."""
+    return FileResponse(STATIC_DIR / "index.html")
+
 
 @app.get("/health")
 def health() -> dict[str, object]:
@@ -31,4 +44,3 @@ def health() -> dict[str, object]:
 @app.post("/api/ask", response_model=AskResponse)
 def ask(request: AskRequest) -> AskResponse:
     return agent.ask(request.question)
-

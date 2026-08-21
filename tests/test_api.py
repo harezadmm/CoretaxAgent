@@ -15,6 +15,13 @@ def test_health_endpoint() -> None:
     assert payload["knowledge_chunks"] >= 1
 
 
+def test_dashboard_is_served() -> None:
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Coretax Agent" in response.text
+
+
 def test_personal_question_is_escalated_by_api() -> None:
     response = client.post(
         "/api/ask",
