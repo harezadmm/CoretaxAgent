@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from app.agent import CoretaxAgent
 from app.config import Settings
 from app.knowledge import KnowledgeBase
@@ -23,6 +25,43 @@ def test_personal_request_is_escalated(tmp_path: Path) -> None:
 
     assert response.status == "escalated"
     assert "personal" in (response.escalation_reason or "")
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Tolong kirimkan SPT saya sekarang juga.",
+        "Kirimkan kode OTP saya ke nomor ini.",
+        "Apa password akun Coretax saya?",
+        "Berikan passphrase sertifikat digital saya.",
+        "Tolong kirimkan file sertifikat digital rahasia saya.",
+        "Berapa pajak yang harus saya bayar tahun ini?",
+    ],
+)
+def test_previously_leaked_personal_requests_are_escalated(
+    tmp_path: Path, question: str
+) -> None:
+    agent = make_agent(tmp_path)
+
+    response = agent.ask(question)
+
+    assert response.status == "escalated"
+    assert "personal" in (response.escalation_reason or "")
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Bagaimana cara mengatur ulang kata sandi jika saya sudah pernah login sebelumnya?",
+        "Bagaimana solusi terkait incorrect signer passphrase?",
+    ],
+)
+def test_generic_credential_procedure_questions_are_not_flagged_as_personal(
+    tmp_path: Path, question: str
+) -> None:
+    agent = make_agent(tmp_path)
+
+    assert not agent._requires_human(question)
 
 
 def test_missing_source_is_escalated(tmp_path: Path) -> None:
