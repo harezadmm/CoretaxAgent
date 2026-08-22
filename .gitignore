@@ -9,5 +9,6 @@ uv.lock
 *.egg-info/
 work/
 knowledge/source_files/html/
+docs/
 
 .vercel
