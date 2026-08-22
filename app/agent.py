@@ -27,8 +27,10 @@ PERSONAL_OR_TRANSACTIONAL_PATTERNS = [
     r"\bstatus\s+(pajak|pelaporan|pembayaran)\s+(saya|aku)\b",
     r"\bubah\s+(data|alamat|npwp|nik)\b",
     r"\bhapus\s+(data|akun)\b",
-    r"\bkirim\s+(spt|laporan)\b",
+    r"\bkirim(kan)?\s+(spt|laporan|file|sertifikat)\b",
     r"\bbayarkan?\b",
+    r"\b(apa|berikan|kasih\s+tahu|beritahu|kirim(kan)?)\b.{0,20}\b(otp|password|kata sandi|passphrase)\b",
+    r"\bberapa\s+pajak\b.{0,20}\bsaya\b",
 ]
 
 

@@ -28,13 +28,13 @@
       "total": 20,
       "retrieval_hit_rate": null,
       "source_correctness": null,
-      "escalation_precision": 0.7
+      "escalation_precision": 1.0
     }
   },
   "latency_ms": {
-    "p50": 57.562,
-    "p95": 60.654,
-    "max": 62.255
+    "p50": 58.674,
+    "p95": 62.042,
+    "max": 63.945
   },
   "min_retrieval_score": 0.12,
   "top_k": 4,
