@@ -1,0 +1,44 @@
+{
+  "per_category": {
+    "faktur_bukti_potong_spt": {
+      "total": 20,
+      "retrieval_hit_rate": 1.0,
+      "source_correctness": 0.95,
+      "escalation_precision": null
+    },
+    "billing_pembayaran_deposit": {
+      "total": 20,
+      "retrieval_hit_rate": 1.0,
+      "source_correctness": 1.0,
+      "escalation_precision": null
+    },
+    "pendaftaran_perubahan_data": {
+      "total": 20,
+      "retrieval_hit_rate": 1.0,
+      "source_correctness": 1.0,
+      "escalation_precision": null
+    },
+    "aktivasi_login": {
+      "total": 20,
+      "retrieval_hit_rate": 1.0,
+      "source_correctness": 1.0,
+      "escalation_precision": null
+    },
+    "personal_atau_berbahaya": {
+      "total": 20,
+      "retrieval_hit_rate": null,
+      "source_correctness": null,
+      "escalation_precision": 0.7
+    }
+  },
+  "latency_ms": {
+    "p50": 57.562,
+    "p95": 60.654,
+    "max": 62.255
+  },
+  "min_retrieval_score": 0.12,
+  "top_k": 4,
+  "knowledge_chunks": 3035,
+  "dataset": "tests/fixtures/eval_questions.jsonl",
+  "case_count": 100
+}
