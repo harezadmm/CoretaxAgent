@@ -2,7 +2,7 @@
 title: "Faktur pajak 07"
 source_url: "https://www.pajak.go.id/coretaxpedia/faktur-pajak-07"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

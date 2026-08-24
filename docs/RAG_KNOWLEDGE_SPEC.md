@@ -6,6 +6,7 @@ Snapshot knowledge base berasal dari materi resmi DJP yang disimpan di repositor
 
 - `knowledge/coretaxpedia/` — FAQ dan artikel bantuan.
 - `knowledge/manuals/` — hasil ekstraksi manual, panduan, dan leaflet.
+- `knowledge/curated/` — peta intent, glosarium, troubleshooting, evaluasi, dan aturan grounding yang merutekan pertanyaan ke sumber primer.
 - `knowledge/source_files/` — arsip sumber asli.
 - `knowledge/_meta/source-manifest.json` — URL, hash, ukuran, halaman, dan status ekstraksi.
 
@@ -25,6 +26,7 @@ document_hash: "sha256:..."
 ## 3. Kebijakan sumber
 
 - Sumber resmi DJP mendapat prioritas tertinggi.
+- Dokumen `curated/` adalah lapisan routing/sintesis internal; bukan sumber hukum baru dan tidak boleh mengalahkan FAQ/manual primer ketika menjawab.
 - Jika ada konflik, agent tidak memilih secara spekulatif; agent menyebutkan keterbatasan dan mengeskalasi.
 - Jawaban harus menyertakan judul dokumen/section dan URL jika tersedia.
 - Artikel yang kedaluwarsa harus diberi status review atau dikeluarkan dari retrieval.

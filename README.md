@@ -41,8 +41,9 @@ Struktur utama:
 knowledge/
 ├── coretaxpedia/          # Markdown FAQ terbaru untuk RAG
 ├── manuals/               # Hasil ekstraksi PDF untuk RAG
+├── curated/               # Routing intent, glosarium, troubleshooting, dan guardrails
 ├── source_files/          # Arsip PDF dan HTML resmi
-└── _meta/source-manifest.json
+└── _meta/                 # Manifest sumber dan curated layer
 ```
 
 Untuk menyinkronkan ulang materi resmi:

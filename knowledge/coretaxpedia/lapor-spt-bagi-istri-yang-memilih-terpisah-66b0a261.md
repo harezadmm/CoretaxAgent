@@ -2,7 +2,7 @@
 title: "Lapor SPT bagi istri yang memilih terpisah"
 source_url: "https://www.pajak.go.id/coretaxpedia/lapor-spt-bagi-istri-yang-memilih-terpisah"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

@@ -2,7 +2,7 @@
 title: "Manfaat Coretax bagi pemberi penghasilan"
 source_url: "https://www.pajak.go.id/coretaxpedia/manfaat-coretax-bagi-pemberi-penghasilan"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

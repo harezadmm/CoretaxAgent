@@ -2,7 +2,7 @@
 title: "Deposit berkurang, SPT tetap di konsep"
 source_url: "https://www.pajak.go.id/coretaxpedia/deposit-berkurang-spt-tetap-di-konsep"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

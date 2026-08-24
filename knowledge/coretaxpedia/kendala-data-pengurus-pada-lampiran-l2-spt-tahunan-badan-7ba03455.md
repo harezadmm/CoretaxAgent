@@ -2,7 +2,7 @@
 title: "Kendala data pengurus pada Lampiran L2 SPT Tahunan Badan"
 source_url: "https://www.pajak.go.id/coretaxpedia/kendala-data-pengurus-lampiran-l2-spt-tahunan-badan"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

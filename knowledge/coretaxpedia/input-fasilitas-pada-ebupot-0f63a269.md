@@ -2,7 +2,7 @@
 title: "Input fasilitas pada ebupot"
 source_url: "https://www.pajak.go.id/coretaxpedia/input-fasilitas-pada-ebupot"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

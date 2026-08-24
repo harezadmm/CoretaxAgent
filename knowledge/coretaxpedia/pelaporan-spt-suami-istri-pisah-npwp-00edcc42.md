@@ -2,7 +2,7 @@
 title: "Pelaporan SPT suami istri pisah NPWP"
 source_url: "https://www.pajak.go.id/coretaxpedia/pelaporan-spt-suami-istri-pisah-npwp"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

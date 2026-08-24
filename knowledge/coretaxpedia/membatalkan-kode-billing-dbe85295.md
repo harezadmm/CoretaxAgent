@@ -2,7 +2,7 @@
 title: "Membatalkan kode billing"
 source_url: "https://www.pajak.go.id/coretaxpedia/membatalkan-kode-billing"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

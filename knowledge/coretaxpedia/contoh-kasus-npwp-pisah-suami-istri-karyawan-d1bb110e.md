@@ -2,7 +2,7 @@
 title: "Contoh kasus: NPWP pisah, suami istri karyawan."
 source_url: "https://www.pajak.go.id/coretaxpedia/contoh-kasus-npwp-pisah-suami-istri-karyawan"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 
