@@ -61,16 +61,22 @@ python tools\audit_knowledge.py
 ## Virtual Office
 
 View **Virtual Office** menggantikan diagram workflow n8n statis dengan visualisasi
-lantai call center yang berjalan real-time di browser. Delapan meja agent AI menerima
-panggilan, mendengarkan, mencari di knowledge base, lalu menjawab. Sekitar 7% panggilan
-tidak bisa diselesaikan AI; agent berdiri, mengantar kasusnya ke inbox eskalasi, dan
-kembali ke mejanya. Di luar jam kerja kasus menumpuk di inbox — empat petugas datang
-pukul 08:00 pada hari kerja dan mengosongkannya.
+lantai call center yang berjalan real-time di browser. Delapan belas meja agent AI
+menerima panggilan, mendengarkan, mencari di knowledge base, lalu menjawab; pada
+puncak pagi sekitar 14 dari 18 meja terpakai bersamaan. Sekitar 7% panggilan tidak
+bisa diselesaikan AI; agent berdiri, mengantar kasusnya ke inbox eskalasi, dan kembali
+ke mejanya. Di luar jam kerja kasus menumpuk di inbox — enam petugas datang pukul
+08:00 pada hari kerja dan mengosongkannya.
+
+Jika view dibuka di luar jam kerja asli (malam atau akhir pekan), jam simulasi dimulai
+pada pukul 09:30 hari kerja berikutnya supaya kantor langsung terlihat ramai, bukan
+separuh mati. HUD menandainya dengan "jam simulasi · di luar jam kerja asli" agar
+jamnya tidak disalahartikan sebagai waktu sungguhan.
 
 Semua data bersifat simulasi di sisi klien (tidak ada endpoint baru). Kontrol kecepatan
 1×–300× ada di toolbar untuk mempercepat pergantian shift; klik meja mana pun untuk
-melihat panggilan atau kasus yang sedang ditangani; tombol **Edit layout** memungkinkan
-menata ulang perabot dan lantai, tersimpan otomatis di `localStorage`.
+melihat panggilan atau kasus yang sedang ditangani; tombol **Edit layout** membuka palet
+sprite untuk menata ulang perabot dan lantai, tersimpan otomatis di `localStorage`.
 
 ```text
 app/static/office/          # tilemap, simulasi, renderer, panel, editor (ES module, tanpa build step)
