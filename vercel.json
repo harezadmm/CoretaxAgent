@@ -3,7 +3,7 @@
   "version": 2,
   "functions": {
     "api/index.py": {
-      "excludeFiles": "{knowledge/source_files/**,tests/**,tools/**,work/**,.venv/**,.vercel/**}"
+      "excludeFiles": "{knowledge/source_files/**,tests/**,tools/**,work/**,.venv/**,.vercel/**,.claude/**,.pytest_cache/**,*.egg-info/**}"
     }
   },
   "rewrites": [
