@@ -1,6 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
+  "//": "outputDirectory points at an empty folder on purpose. Left unset, Vercel treats the repository root as static output and serves it BEFORE the catch-all rewrite below, which made /app/agent.py, /app/config.py and /requirements.txt publicly downloadable. With no static files to match, every request falls through to the function; the dashboard's assets come from FastAPI's own /static mount.",
+  "outputDirectory": "public",
   "functions": {
     "api/index.py": {
       "excludeFiles": "{knowledge/source_files/**,tests/**,tools/**,work/**,.venv/**,.vercel/**,.claude/**,.pytest_cache/**,*.egg-info/**}"

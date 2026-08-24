@@ -1,0 +1,7 @@
+Deliberately empty.
+
+vercel.json points outputDirectory here so Vercel has no repository root to
+serve as static files. Without it, /app/agent.py and every other source file
+is downloadable, because static output is matched before the catch-all rewrite
+to api/index.py. Everything the browser needs is served by FastAPI's /static
+mount instead.
