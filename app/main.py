@@ -40,14 +40,17 @@ app = FastAPI(
     version="0.1.0",
 )
 
-STATIC_DIR = Path(__file__).parent / "static"
+# On Vercel these paths are served straight from the CDN and never reach the
+# function; the mount below only backs local development.
+PUBLIC_DIR = Path(__file__).resolve().parent.parent / "public"
+STATIC_DIR = PUBLIC_DIR / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/", include_in_schema=False)
 def dashboard() -> FileResponse:
     """Serve the local Coretax support-operations dashboard."""
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(PUBLIC_DIR / "index.html")
 
 
 @app.get("/health")
