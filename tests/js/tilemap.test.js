@@ -41,6 +41,23 @@ test('the default office has eight AI desks and four escalation desks', () => {
   for (const seat of layout.seats) assert.ok(seat.monitor, `${seat.id} has no monitor`);
 });
 
+test('a monitor sits on its own desk, two rows above the seat', () => {
+  const layout = createDefaultLayout();
+  const desks = layout.furniture.filter((item) => item.type === 'DESK_FRONT');
+
+  for (const seat of layout.seats) {
+    // The renderer lifts the sprite in pixels; the tile it names must be the
+    // desk's own row, or the monitor floats a whole tile clear of the surface.
+    assert.equal(seat.monitor.row, seat.row - 2, `${seat.id} monitor is not on the desk row`);
+    assert.equal(seat.monitor.col, seat.col, `${seat.id} monitor is not centred on the desk`);
+
+    const desk = desks.find(
+      (item) => item.row === seat.monitor.row && seat.col >= item.col && seat.col < item.col + 3,
+    );
+    assert.ok(desk, `${seat.id} has a monitor with no desk under it`);
+  }
+});
+
 test('every seat can reach the entrance and the escalation inbox', () => {
   const layout = createDefaultLayout();
   const blocked = buildBlockedGrid(layout, catalog);
@@ -144,6 +161,11 @@ test('a stale or damaged stored layout is rejected instead of throwing', () => {
   assert.equal(deserializeLayout(null), null);
   assert.equal(deserializeLayout('not an object'), null);
   assert.equal(deserializeLayout({ ...good, version: 99 }), null, 'a future version must not be guessed at');
+  assert.equal(
+    deserializeLayout({ ...good, version: 1 }),
+    null,
+    'version 1 placed monitors a tile higher and must not be reused',
+  );
   assert.equal(deserializeLayout({ ...good, tiles: [1, 2, 3] }), null, 'tile count must match cols x rows');
   assert.equal(deserializeLayout({ ...good, seats: [] }), null, 'a layout with no seats has nobody to simulate');
   assert.equal(deserializeLayout({ ...good, cols: 0 }), null);

@@ -26,6 +26,22 @@ export const MAX_SCALE = 6;
 /** One extra tile of headroom so the 16x32 wall pieces on row 0 are not clipped. */
 const WALL_OVERHANG = TILE_SIZE;
 
+/**
+ * Pixel offsets that plant an object on a furniture sprite's surface.
+ *
+ * These come from the artwork, not from the tile grid. `DESK_FRONT` is
+ * transparent down to y=11, so its tabletop begins 11px into its own tile; the
+ * PC sprite's keyboard ends at y=22 with nine blank rows beneath it. Aligning
+ * on tile boundaries alone leaves the monitor floating five pixels clear of the
+ * desk, which is exactly what it looked like.
+ */
+const MONITOR_LIFT = -5;
+/** Draw order nudge: after the desk it stands on, before anyone sitting at it. */
+const SURFACE_SORT_BIAS = 1;
+
+/** Escalation slips on the inbox tray, in pixels inside the tray sprite's tile. */
+const PILE = { x: 10, baseY: 24, width: 12, step: 1.6, maxVisible: 7 };
+
 const BUBBLE_STYLE = {
   call: { fill: '#52d7e8', glyph: 'phone' },
   search: { fill: '#a590ff', glyph: 'search' },
@@ -179,7 +195,13 @@ export function createRenderer(canvas, assets) {
     context.globalAlpha = 1;
   }
 
-  /** The escalation tray: one slip per queued case, capped so it cannot tower. */
+  /**
+   * The escalation tray: one slip per queued case, capped so it cannot tower.
+   *
+   * Positioned against the tray sprite's own surface (`SMALL_TABLE_FRONT` is
+   * transparent above y=11) rather than the top of its tile, so the stack rests
+   * on the table instead of hovering over it.
+   */
   function drawInboxPile(simState) {
     const tray = layout.landmarks?.inboxTray;
     if (!tray) return;
@@ -188,26 +210,26 @@ export function createRenderer(canvas, assets) {
 
     const { x, y } = origin();
     const scale = camera.scale;
-    const visible = Math.min(queued, 7);
-    const baseX = x + Math.round((tray.col * TILE_SIZE + 5) * scale);
-    const baseY = y + Math.round((tray.row * TILE_SIZE + 8) * scale);
+    const visible = Math.min(queued, PILE.maxVisible);
+    const left = x + Math.round((tray.col * TILE_SIZE + PILE.x) * scale);
+    const base = y + Math.round((tray.row * TILE_SIZE + PILE.baseY) * scale);
+    const slip = Math.max(1, Math.round(scale));
+    const step = Math.max(slip + 1, Math.round(PILE.step * scale));
 
     for (let i = 0; i < visible; i += 1) {
+      const top = base - i * step;
       context.fillStyle = i === visible - 1 ? '#ffd79a' : '#e8dcc6';
-      context.fillRect(baseX, baseY - i * Math.max(1, Math.round(scale * 1.2)), 9 * scale, scale);
-      context.fillStyle = 'rgba(0,0,0,0.35)';
-      context.fillRect(baseX, baseY - i * Math.max(1, Math.round(scale * 1.2)) + scale, 9 * scale, Math.max(1, Math.round(scale * 0.35)));
+      context.fillRect(left, top, PILE.width * scale, slip);
+      context.fillStyle = 'rgba(0,0,0,0.38)';
+      context.fillRect(left, top + slip, PILE.width * scale, Math.max(1, Math.round(slip / 2)));
     }
 
     if (queued > visible) {
-      context.font = `${Math.max(9, 4 * scale)}px "Cascadia Mono", monospace`;
+      const fontSize = Math.max(9, Math.round(3.6 * scale));
+      context.font = `${fontSize}px "Cascadia Mono", Consolas, monospace`;
       context.fillStyle = '#ffb248';
       context.textAlign = 'center';
-      context.fillText(
-        `+${queued - visible}`,
-        baseX + 4.5 * scale,
-        baseY - visible * Math.round(scale * 1.2) - 2 * scale,
-      );
+      context.fillText(`+${queued - visible}`, left + (PILE.width / 2) * scale, base - visible * step - slip);
       context.textAlign = 'left';
     }
   }
@@ -295,10 +317,22 @@ export function createRenderer(canvas, assets) {
       if (!seat.monitor) continue;
       const sprite = monitorSprite(seat, occupants.get(seat.id), now);
       if (!sprite) continue;
-      const worldY = seat.monitor.row * TILE_SIZE;
+      // The desk occupies two rows from `monitor.row`, so sorting just past its
+      // bottom edge puts the monitor on the desk while the agent sitting one row
+      // further down still draws in front of both.
+      const deskBottom = (seat.monitor.row + 2) * TILE_SIZE;
       drawables.push({
-        sort: worldY + sprite.h - 1,
-        paint: () => drawSprite(sprite.image, seat.monitor.col * TILE_SIZE, worldY),
+        sort: deskBottom + SURFACE_SORT_BIAS,
+        paint: () =>
+          drawSprite(sprite.image, seat.monitor.col * TILE_SIZE, seat.monitor.row * TILE_SIZE + MONITOR_LIFT),
+      });
+    }
+
+    const tray = layout.landmarks?.inboxTray;
+    if (tray) {
+      drawables.push({
+        sort: (tray.row + 2) * TILE_SIZE + SURFACE_SORT_BIAS,
+        paint: () => drawInboxPile(simState),
       });
     }
 
@@ -318,7 +352,6 @@ export function createRenderer(canvas, assets) {
     drawables.sort((a, b) => a.sort - b.sort);
     for (const drawable of drawables) drawable.paint();
 
-    drawInboxPile(simState);
     drawNightWash(simState);
 
     if (options.highlightSeatId) {

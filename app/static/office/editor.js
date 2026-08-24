@@ -32,6 +32,7 @@ const PAINTS = [
   { id: 'wall', tile: TILE.WALL, label: 'Dinding' },
 ];
 
+/** Palette order, most-used first — the catalogue's own order is alphabetical by id. */
 const CATEGORY_LABEL = {
   desks: 'Meja',
   chairs: 'Kursi & sofa',
@@ -40,6 +41,7 @@ const CATEGORY_LABEL = {
   wall: 'Hiasan dinding',
   misc: 'Lainnya',
 };
+const CATEGORY_ORDER = Object.keys(CATEGORY_LABEL);
 
 export function loadStoredLayout() {
   try {
@@ -72,12 +74,13 @@ export function clearStoredLayout() {
 /**
  * @param {object} options
  * @param {HTMLElement} options.bar        Container for the editor toolbar
- * @param {object} options.catalog         Sprite catalog
+ * @param {object} options.assets          Loaded sprite sets, for palette thumbnails
  * @param {() => object} options.getLayout Current layout
  * @param {(layout: object) => void} options.onChange Called after every mutation
  * @param {(layout: object) => void} options.onReplace Called when the whole layout is swapped
  */
-export function createEditor({ bar, catalog, getLayout, onChange, onReplace }) {
+export function createEditor({ bar, assets, getLayout, onChange, onReplace }) {
+  const { catalog } = assets;
   const assetIndex = buildAssetIndex(catalog);
   const state = {
     active: false,
@@ -89,22 +92,72 @@ export function createEditor({ bar, catalog, getLayout, onChange, onReplace }) {
     problems: [],
   };
 
-  const groupsByCategory = new Map();
+  const groupsByCategory = new Map(CATEGORY_ORDER.map((category) => [category, []]));
   for (const [id, group] of Object.entries(catalog.groups)) {
-    const category = group.category ?? 'misc';
-    if (!groupsByCategory.has(category)) groupsByCategory.set(category, []);
+    const category = groupsByCategory.has(group.category) ? group.category : 'misc';
     groupsByCategory.get(category).push({ id, group });
   }
+  for (const [category, entries] of groupsByCategory) {
+    if (entries.length === 0) groupsByCategory.delete(category);
+  }
 
-  function furnitureOptions() {
-    return [...groupsByCategory.entries()]
-      .map(([category, entries]) => {
-        const options = entries
-          .map(({ group }) => `<option value="${group.default}">${group.name}</option>`)
-          .join('');
-        return `<optgroup label="${CATEGORY_LABEL[category] ?? category}">${options}</optgroup>`;
-      })
-      .join('');
+  const THUMB = 40;
+
+  /**
+   * Draw a furniture sprite into a fixed-size swatch.
+   *
+   * The catalogue spans 16x16 stools to 48x64 tables, so each is scaled by the
+   * largest whole factor that fits and then centred — a fractional scale would
+   * blur the very pixel art the palette exists to show.
+   */
+  function thumbnail(assetId) {
+    const sprite = assets.furniture.get(assetId);
+    const canvas = document.createElement('canvas');
+    canvas.width = THUMB;
+    canvas.height = THUMB;
+    if (!sprite) return canvas;
+
+    const context = canvas.getContext('2d');
+    context.imageSmoothingEnabled = false;
+    const scale = Math.max(1, Math.floor(Math.min(THUMB / sprite.w, THUMB / sprite.h)));
+    context.drawImage(
+      sprite.image,
+      Math.round((THUMB - sprite.w * scale) / 2),
+      Math.round((THUMB - sprite.h * scale) / 2),
+      sprite.w * scale,
+      sprite.h * scale,
+    );
+    return canvas;
+  }
+
+  /** Build the palette as real elements — the thumbnails are canvases, not markup. */
+  function buildPalette(host) {
+    host.replaceChildren();
+    for (const [category, entries] of groupsByCategory) {
+      const group = document.createElement('div');
+      group.className = 'palette-group';
+
+      const heading = document.createElement('span');
+      heading.className = 'palette-heading';
+      heading.textContent = CATEGORY_LABEL[category] ?? category;
+      group.append(heading);
+
+      const items = document.createElement('div');
+      items.className = 'palette-items';
+      for (const entry of entries) {
+        const id = entry.group.default;
+        if (!id) continue;
+        const button = document.createElement('button');
+        button.className = `palette-item${id === state.furnitureType ? ' active' : ''}`;
+        button.dataset.furniture = id;
+        button.title = entry.group.name;
+        button.setAttribute('aria-label', entry.group.name);
+        button.append(thumbnail(id));
+        items.append(button);
+      }
+      group.append(items);
+      host.append(group);
+    }
   }
 
   function renderBar() {
@@ -123,9 +176,9 @@ export function createEditor({ bar, catalog, getLayout, onChange, onReplace }) {
           ${tool('paint', '▦ Lantai')}
         </span>
       </div>
-      <div class="editor-row" data-when="place">
+      <div class="editor-row editor-palette-row" data-when="place">
         <span class="editor-label">Perabot</span>
-        <select data-role="furniture">${furnitureOptions()}</select>
+        <div class="editor-palette" data-role="palette"></div>
       </div>
       <div class="editor-row" data-when="paint">
         <span class="editor-label">Permukaan</span>
@@ -138,7 +191,7 @@ export function createEditor({ bar, catalog, getLayout, onChange, onReplace }) {
         }</span>
       </div>`;
 
-    bar.querySelector('[data-role="furniture"]').value = state.furnitureType;
+    buildPalette(bar.querySelector('[data-role="palette"]'));
     for (const row of bar.querySelectorAll('[data-when]')) {
       row.hidden = row.dataset.when !== state.tool;
     }
@@ -249,9 +302,15 @@ export function createEditor({ bar, catalog, getLayout, onChange, onReplace }) {
 
   bar.addEventListener('click', (event) => {
     const button = event.target.closest('button');
-    const select = event.target.closest('select');
-    if (select) return;
     if (!button) return;
+
+    if (button.dataset.furniture) {
+      state.furnitureType = button.dataset.furniture;
+      for (const item of bar.querySelectorAll('.palette-item')) {
+        item.classList.toggle('active', item === button);
+      }
+      return;
+    }
 
     if (button.dataset.tool) {
       state.tool = button.dataset.tool;
@@ -270,14 +329,6 @@ export function createEditor({ bar, catalog, getLayout, onChange, onReplace }) {
       onReplace(fresh);
       state.grabbed = null;
       state.problems = validateLayout(fresh, catalog);
-      renderBar();
-    }
-  });
-
-  bar.addEventListener('change', (event) => {
-    if (event.target.dataset.role === 'furniture') {
-      state.furnitureType = event.target.value;
-      state.tool = 'place';
       renderBar();
     }
   });

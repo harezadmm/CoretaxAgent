@@ -13,7 +13,14 @@ import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 import { createDefaultLayout } from '../../app/static/office/tilemap.js';
-import { createRandom, createSimulation, isOnShift, nextShiftStart, queuedCases } from '../../app/static/office/sim.js';
+import {
+  createRandom,
+  createSimulation,
+  isOnShift,
+  nextShiftStart,
+  officeStartTime,
+  queuedCases,
+} from '../../app/static/office/sim.js';
 
 const catalog = JSON.parse(
   readFileSync(fileURLToPath(new URL('../../app/static/assets/office/catalog.json', import.meta.url)), 'utf8'),
@@ -50,6 +57,28 @@ test('the next shift skips the weekend', () => {
   assert.equal(nextShiftStart(at(24, 22)), at(25, 8), 'Monday night rolls to Tuesday morning');
   assert.equal(nextShiftStart(at(22, 12)), at(24, 8), 'Saturday noon rolls to Monday morning');
   assert.equal(nextShiftStart(at(24, 6)), at(24, 8), 'before the shift, it is the same day');
+});
+
+test('opening outside office hours starts the clock on a working morning', () => {
+  const duringHours = at(24, 11, 20);
+  assert.equal(officeStartTime(duringHours), duringHours, 'inside hours the real clock is kept');
+
+  assert.equal(officeStartTime(at(24, 19)), at(25, 9, 30), 'Monday evening opens on Tuesday morning');
+  assert.equal(officeStartTime(at(22, 10)), at(24, 9, 30), 'Saturday opens on Monday morning');
+  assert.equal(officeStartTime(at(24, 5)), at(24, 9, 30), 'early Monday opens later the same day');
+
+  for (const opened of [at(24, 19), at(22, 10), at(23, 3), at(24, 5)]) {
+    assert.ok(isOnShift(officeStartTime(opened)), 'the shifted clock must land inside office hours');
+  }
+});
+
+test('a simulation started outside hours opens with the escalation desks staffed', () => {
+  const sim = build(officeStartTime(at(24, 21))); // opened Monday night
+  run(sim, 60);
+
+  const metrics = sim.metrics();
+  assert.equal(metrics.onShift, true);
+  assert.equal(metrics.staffOnDuty, 4, 'the office should not open onto empty escalation desks');
 });
 
 // ── Escalation queue ────────────────────────────────────────────────────────

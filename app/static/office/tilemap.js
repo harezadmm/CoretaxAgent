@@ -26,7 +26,13 @@ const CARPET_TILES = new Set([TILE.CARPET_AI, TILE.CARPET_STAFF]);
 
 export const DIR = { DOWN: 'down', UP: 'up', RIGHT: 'right', LEFT: 'left' };
 
-export const LAYOUT_VERSION = 1;
+/**
+ * Bumped to 2 when `seat.monitor.row` changed from the tile above the desk to
+ * the desk's own row. A layout saved under version 1 carries the old meaning,
+ * which would float every monitor a tile too high, so those are discarded and
+ * rebuilt from the default rather than migrated.
+ */
+export const LAYOUT_VERSION = 2;
 
 /** Tiles a character may stand on, ignoring furniture. */
 export function isWalkableTile(tile) {
@@ -298,7 +304,9 @@ export function createDefaultLayout() {
   //
   // The monitor is recorded on the seat rather than dropped into `furniture`
   // because the renderer swaps its sprite with the seat's state — dark when the
-  // desk is empty, animating while a call is being handled.
+  // desk is empty, animating while a call is being handled. Its `row` is the
+  // desk's own row; the renderer lifts the sprite by a few pixels so the
+  // keyboard lands on the desk surface rather than a whole tile above it.
   let aiIndex = 0;
   for (const row of AI_DESK_ROWS) {
     for (const col of AI_DESK_COLS) {
@@ -311,7 +319,7 @@ export function createDefaultLayout() {
         row: row + 2,
         dir: DIR.UP,
         label: `AI-${String(aiIndex).padStart(2, '0')}`,
-        monitor: { col: col + 1, row: row - 1 },
+        monitor: { col: col + 1, row },
       });
     }
   }
@@ -329,7 +337,7 @@ export function createDefaultLayout() {
         row: row + 2,
         dir: DIR.UP,
         label: `PETUGAS-${String(staffIndex).padStart(2, '0')}`,
-        monitor: { col: col + 1, row: row - 1 },
+        monitor: { col: col + 1, row },
       });
     }
   }

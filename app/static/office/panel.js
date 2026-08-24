@@ -136,12 +136,17 @@ export function renderMetrics(host, metrics) {
   ].join('');
 }
 
-export function renderHud(host, metrics) {
+export function renderHud(host, metrics, { shifted = false } = {}) {
   const shift = metrics.onShift
     ? '<em class="office-shift on">JAM KERJA</em>'
     : `<em class="office-shift off">DI LUAR JAM KERJA</em><small>Petugas kembali ${formatClock(metrics.nextShiftStart)}</small>`;
+  // When the view opened outside office hours the clock was moved forward to a
+  // working morning. Say so, rather than let it read as the real time.
+  const note = shifted
+    ? '<small class="office-sim-note">jam simulasi · di luar jam kerja asli</small>'
+    : '';
   host.innerHTML = `
-    <div class="office-clock"><strong>${formatClock(metrics.clock)}</strong><small>${formatDay(metrics.clock)}</small></div>
+    <div class="office-clock"><strong>${formatClock(metrics.clock)}</strong><small>${formatDay(metrics.clock)}</small>${note}</div>
     <div class="office-shift-box">${shift}</div>`;
 }
 

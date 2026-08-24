@@ -118,6 +118,7 @@ button,input{ font:inherit; } button{ cursor:pointer; } .app-shell{ display:flex
 .office-clock,.office-shift-box{ border:1px solid #253139; border-radius:6px; background:#0b1014e8; padding:7px 10px; }
 .office-clock strong{ display:block; font-size:16px; letter-spacing:-.06em; }
 .office-clock small{ display:block; margin-top:3px; color:#7f8b93; font-size:8px; }
+.office-sim-note{ color:var(--amber)!important; letter-spacing:.06em; }
 .office-shift-box{ display:flex; flex-direction:column; justify-content:center; }
 .office-shift{ font-style:normal; font-size:9px; letter-spacing:.08em; }
 .office-shift.on{ color:var(--green); }
@@ -165,7 +166,19 @@ button,input{ font:inherit; } button{ cursor:pointer; } .app-shell{ display:flex
 .office-editor-bar[hidden],.editor-row[hidden]{ display:none; }
 .editor-row{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
 .editor-label{ min-width:62px; color:#7f8b93; font-size:8px; letter-spacing:.1em; }
-.editor-row select{ color:#d6dfe2; background:#101519; border:1px solid #2c363d; border-radius:4px; padding:5px 7px; font-size:9px; }
+.editor-palette-row{ align-items:flex-start; }
+/* One scrolling strip of real sprite swatches: picking furniture from a text
+   dropdown meant reading names for things you can simply look at. */
+.editor-palette{ flex:1; min-width:0; display:flex; gap:14px; overflow-x:auto; padding-bottom:4px; scrollbar-width:thin; }
+.editor-palette::-webkit-scrollbar{ height:6px; }
+.editor-palette::-webkit-scrollbar-thumb{ background:#2f3b43; border-radius:3px; }
+.palette-group{ display:grid; gap:5px; }
+.palette-heading{ color:#66727b; font-size:7px; letter-spacing:.12em; }
+.palette-items{ display:flex; gap:5px; }
+.palette-item{ width:46px; height:46px; display:grid; place-items:center; padding:0; border:1px solid #2c353b; border-radius:5px; background:#0f151a; }
+.palette-item canvas{ image-rendering:pixelated; }
+.palette-item:hover{ border-color:var(--cyan); background:#132026; }
+.palette-item.active{ border-color:var(--amber); background:#1d1810; box-shadow:0 0 0 1px #ffb24840; }
 .editor-actions{ justify-content:space-between; }
 .editor-actions .outline-button{ padding:5px 9px; }
 .editor-status{ font-size:8px; }

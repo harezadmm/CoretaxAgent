@@ -170,6 +170,21 @@ export function isOnShift(timestamp, shift = SHIFT) {
   return hour >= shift.startHour && hour < shift.endHour;
 }
 
+/**
+ * Where the office clock should start when the view is opened.
+ *
+ * During office hours this is simply now. Outside them — evenings, weekends —
+ * starting at the real time would open onto a half-dead floor with every
+ * escalation desk empty, which reads as a broken screen rather than as a closed
+ * shift. Instead the clock jumps to mid-morning on the next working day, so the
+ * office is busy on arrival. The HUD labels this, because a clock that silently
+ * disagrees with the wall is worse than an empty room.
+ */
+export function officeStartTime(now, shift = SHIFT) {
+  if (isOnShift(now, shift)) return now;
+  return nextShiftStart(now, shift) + 90 * 60 * 1000;
+}
+
 /** Timestamp of the next moment operators come on duty, at or after `timestamp`. */
 export function nextShiftStart(timestamp, shift = SHIFT) {
   const date = new Date(timestamp);

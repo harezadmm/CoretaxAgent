@@ -19,7 +19,7 @@ import {
   renderQueue,
 } from './panel.js';
 import { createRenderer } from './render.js';
-import { DEFAULT_SPEED, SPEEDS, createSimulation } from './sim.js';
+import { DEFAULT_SPEED, SPEEDS, createSimulation, officeStartTime } from './sim.js';
 import { buildBlockedGrid, createDefaultLayout } from './tilemap.js';
 import { loadOfficeAssets } from './sprites.js';
 
@@ -51,10 +51,17 @@ export async function mountOffice(host, { onStatus } = {}) {
   }
 
   let layout = loadStoredLayout() ?? createDefaultLayout();
+
+  // Opened outside office hours, the clock starts on the next working morning so
+  // the escalation desks are staffed rather than empty. The HUD flags it.
+  const openedAt = Date.now();
+  const startTime = officeStartTime(openedAt);
+  const clockShifted = startTime !== openedAt;
+
   let simulation = createSimulation({
     layout,
     catalog: assets.catalog,
-    startTime: Date.now(),
+    startTime,
     speed: DEFAULT_SPEED,
   });
 
@@ -65,7 +72,7 @@ export async function mountOffice(host, { onStatus } = {}) {
 
   const editor = createEditor({
     bar: editorBar,
-    catalog: assets.catalog,
+    assets,
     getLayout: () => layout,
     onChange: (updated) => {
       // The simulation walks the same object, so its blocked grid has to be
@@ -118,7 +125,7 @@ export async function mountOffice(host, { onStatus } = {}) {
   function refreshPanels(now) {
     const metrics = simulation.metrics();
     renderMetrics(metricsHost, metrics);
-    renderHud(hudHost, metrics);
+    renderHud(hudHost, metrics, { shifted: clockShifted });
     renderDetail(detailHost, detailTitle, shiftPill, {
       selection,
       state: simulation.state,
