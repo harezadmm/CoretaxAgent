@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import math
 import re
+from collections import Counter
 from hashlib import sha256
 from dataclasses import dataclass
 from pathlib import Path
+from threading import RLock
 
 
 TOKEN_PATTERN = re.compile(r"[a-zA-Z0-9]+", re.UNICODE)
@@ -33,7 +35,20 @@ class SearchResult:
 class KnowledgeBase:
     def __init__(self, directory: Path):
         self.directory = directory
-        self.chunks = self._load_chunks()
+        self._lock = RLock()
+        self.chunks: list[Chunk] = []
+        self.reload()
+
+    def reload(self) -> int:
+        """Rebuild the in-memory retrieval index after a managed document changes."""
+        chunks = self._load_chunks()
+        with self._lock:
+            self.chunks = chunks
+        return len(chunks)
+
+    def document_chunk_counts(self) -> dict[str, int]:
+        with self._lock:
+            return dict(Counter(chunk.document for chunk in self.chunks))
 
     def _load_chunks(self) -> list[Chunk]:
         if not self.directory.exists():
@@ -136,10 +151,12 @@ class KnowledgeBase:
         if not query_tokens:
             return []
 
+        with self._lock:
+            chunks = tuple(self.chunks)
         query_set = set(query_tokens)
         query_normalized = " ".join(query_tokens)
         results: list[SearchResult] = []
-        for chunk in self.chunks:
+        for chunk in chunks:
             chunk_tokens = tokenize(chunk.content + " " + chunk.section)
             if not chunk_tokens:
                 continue

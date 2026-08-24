@@ -47,9 +47,7 @@ const screenTemplates = {
   history: () => `${screenHeader('SERVICE RECORDS', 'Call History', 'Riwayat panggilan, transkrip, dan hasil penanganan layanan Coretax.', '<label class="screen-search">⌕ <input placeholder="Search caller or topic..." /></label>')}
     <div class="screen-stats">${screenStat('TOTAL CALLS', '1,284', '7 hari terakhir', 'cyan')}${screenStat('RESOLVED', '1,106', '86.1% resolved', 'green')}${screenStat('ESCALATED', '178', '13.9% to staff', 'amber')}${screenStat('AVG. HANDLE TIME', '03:42', '−18s improvement', 'violet')}</div>
     <article class="table-panel"><div class="table-panel-head"><div><p class="panel-kicker">ALL INTERACTIONS</p><h3>Recent call history</h3></div><div class="filter-pills"><button class="active">Last 7 days</button><button>Resolved</button><button>Escalated</button></div></div><div class="data-table history-table"><div class="data-row data-head"><span>CALL ID</span><span>CALLER</span><span>TOPIC</span><span>DATE</span><span>RESULT</span><span></span></div><div class="data-row"><span class="case-id">#CALL-7421</span><span>08••• 8214</span><span>Aktivasi akun</span><span class="mono">Today 10:42</span><span><em class="resolved">RESOLVED AI</em></span><button class="row-action" data-action="details">Details</button></div><div class="data-row"><span class="case-id">#CALL-7420</span><span>08••• 4416</span><span>Pelaporan SPT</span><span class="mono">Today 10:39</span><span><em class="priority-medium">ESCALATED</em></span><button class="row-action" data-action="details">Details</button></div><div class="data-row"><span class="case-id">#CALL-7419</span><span>08••• 9031</span><span>Login Coretax</span><span class="mono">Today 10:34</span><span><em class="resolved">RESOLVED AI</em></span><button class="row-action" data-action="details">Details</button></div><div class="data-row"><span class="case-id">#CALL-7418</span><span>08••• 5570</span><span>Kode otorisasi DJP</span><span class="mono">Today 10:30</span><span><em class="resolved">RESOLVED AI</em></span><button class="row-action" data-action="details">Details</button></div></div></article>`,
-  knowledge: () => `${screenHeader('RETRIEVAL SOURCES', 'Knowledge Base', 'Kelola dokumen resmi yang digunakan AI untuk menjawab pertanyaan Coretax.', '<button class="primary-button" data-action="upload">＋ Add source</button>')}
-    <div class="screen-stats">${screenStat('ACTIVE SOURCES', '284', '230 FAQ + 54 PDF', 'green')}${screenStat('RAG CHUNKS', '3,035', 'Deduplicated content', 'cyan')}${screenStat('LAST SYNC', '12m ago', 'All sources up to date', 'violet')}${screenStat('NEEDS REVIEW', '06', 'Marked by operators', 'amber')}</div>
-    <div class="knowledge-grid"><article class="table-panel source-list"><div class="table-panel-head"><div><p class="panel-kicker">SOURCE LIBRARY</p><h3>Official Coretax content</h3></div><label class="screen-search">⌕ <input placeholder="Search documents..." /></label></div><div class="source-item"><span class="file-icon pdf">PDF</span><div><strong>BUKU MANUAL CORETAX 2024</strong><small>Official DJP · 1,530 chunks · updated 12m ago</small></div><em class="source-live">ACTIVE</em><button class="row-action" data-action="open-source">Open</button></div><div class="source-item"><span class="file-icon faq">FAQ</span><div><strong>CORETAXPEDIA FAQ COLLECTION</strong><small>Official FAQ · 230 pages · updated 12m ago</small></div><em class="source-live">ACTIVE</em><button class="row-action" data-action="open-source">Open</button></div><div class="source-item"><span class="file-icon pdf">PDF</span><div><strong>PANDUAN AKTIVASI AKUN 2025</strong><small>Official DJP · 75 chunks · updated yesterday</small></div><em class="source-review">REVIEW</em><button class="row-action" data-action="open-source">Open</button></div></article><article class="table-panel source-health"><div class="table-panel-head"><div><p class="panel-kicker">RAG HEALTH</p><h3>Retrieval quality</h3></div><span class="status-pill live-pill">● HEALTHY</span></div><div class="health-score"><strong>98.4</strong><span>/ 100</span></div><div class="health-bars"><div><span>Source coverage</span><b>100%</b><i><em style="width:100%"></em></i></div><div><span>Duplicate control</span><b>96%</b><i><em style="width:96%"></em></i></div><div><span>Freshness</span><b>98%</b><i><em style="width:98%"></em></i></div></div><button class="outline-button" data-action="sync">↻ Sync official sources</button></article></div>`,
+  knowledge: () => `<div id="rag-management-root" class="rag-management-root"><div class="rag-loading-shell"><span class="rag-spinner"></span><p>Memuat visualisasi memory RAG…</p></div></div>`,
   analytics: () => `${screenHeader('SERVICE INTELLIGENCE', 'Analytics', 'Pahami pola pertanyaan pengguna dan efektivitas AI dari waktu ke waktu.', '<div class="period-picker screen-period"><button>Day</button><button class="active">7 days</button><button>Month</button></div>')}
     <div class="screen-stats">${screenStat('CONTAINMENT RATE', '86.1%', '+4.8% this period', 'green')}${screenStat('AVG. RESPONSE', '1.8s', '−0.3s improvement', 'cyan')}${screenStat('CUSTOMER SENTIMENT', '4.6/5', 'Based on 312 ratings', 'violet')}${screenStat('TOPIC COVERAGE', '92%', 'Official KB match', 'amber')}</div>
     <div class="analytics-grid"><article class="table-panel analytics-chart"><div class="table-panel-head"><div><p class="panel-kicker">QUESTION VOLUME</p><h3>Topics over time</h3></div><span class="muted-label">7 DAYS · 1,284 CALLS</span></div><div class="mini-bars"><i style="height:43%"></i><i style="height:58%"></i><i style="height:48%"></i><i style="height:76%"></i><i style="height:66%"></i><i style="height:93%"></i><i style="height:81%"></i><i style="height:100%"></i><i style="height:87%"></i><i style="height:72%"></i><i style="height:90%"></i><i style="height:61%"></i></div><div class="mini-axis"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div></article><article class="table-panel"><div class="table-panel-head"><div><p class="panel-kicker">TOP INTENTS</p><h3>What users ask</h3></div></div><ol class="rank-list"><li><span>01</span><strong>Aktivasi akun</strong><b>32%</b></li><li><span>02</span><strong>Kode otorisasi</strong><b>24%</b></li><li><span>03</span><strong>Kode billing</strong><b>18%</b></li><li><span>04</span><strong>Pelaporan SPT</strong><b>14%</b></li><li><span>05</span><strong>Login Coretax</strong><b>12%</b></li></ol></article></div>`,
@@ -65,12 +63,22 @@ const screenTemplates = {
  */
 let officeSession = null;
 let officeToken = 0;
+let ragSession = null;
+let ragToken = 0;
 
 function teardownOffice() {
   officeToken += 1;
   if (officeSession) {
     officeSession.destroy();
     officeSession = null;
+  }
+}
+
+function teardownRagManagement() {
+  ragToken += 1;
+  if (ragSession) {
+    ragSession.destroy();
+    ragSession = null;
   }
 }
 
@@ -93,11 +101,47 @@ function mountOfficeView() {
     });
 }
 
+function mountRagManagement() {
+  const token = ragToken;
+  const mount = screenStage.querySelector('#rag-management-root');
+  import('/static/rag-management.js')
+    .then(({ mountRagManagement: mountRag }) => {
+      if (token !== ragToken || !mount?.isConnected) return null;
+      return mountRag(mount, notify);
+    })
+    .then((session) => {
+      if (!session) return;
+      if (token !== ragToken) session.destroy();
+      else ragSession = session;
+    })
+    .catch((error) => {
+      if (mount?.isConnected) {
+        const failure = document.createElement('div');
+        const title = document.createElement('strong');
+        const detail = document.createElement('p');
+        failure.className = 'rag-fatal';
+        title.textContent = 'RAG Management gagal dimuat.';
+        detail.textContent = error.message;
+        failure.append(title, detail);
+        mount.replaceChildren(failure);
+      }
+    });
+}
+
 function navigateToView(view) {
   if (view !== 'overview') stopDotPlotAnimation();
   teardownOffice();
+  teardownRagManagement();
   document.querySelectorAll('.nav-item').forEach((entry) => entry.classList.toggle('active', entry.dataset.view === view));
   document.querySelector('#page-title').textContent = viewLabels[view] || view;
+  const breadcrumb = document.querySelector('.breadcrumb');
+  if (breadcrumb) {
+    breadcrumb.replaceChildren(
+      document.createTextNode('DASHBOARD '),
+      Object.assign(document.createElement('span'), { textContent: '›' }),
+      document.createTextNode(` ${(viewLabels[view] || view).toUpperCase()}`),
+    );
+  }
   if (view === 'overview') {
     overviewView.hidden = false;
     screenStage.hidden = true;
@@ -108,6 +152,7 @@ function navigateToView(view) {
   screenStage.hidden = false;
   screenStage.innerHTML = screenTemplates[view] ? screenTemplates[view]() : screenTemplates.overview?.() || '';
   if (view === 'office') mountOfficeView();
+  if (view === 'knowledge') mountRagManagement();
   screenStage.querySelectorAll('.filter-pills button').forEach((button) => button.addEventListener('click', () => {
     screenStage.querySelectorAll('.filter-pills button').forEach((entry) => entry.classList.remove('active'));
     button.classList.add('active');

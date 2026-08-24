@@ -17,6 +17,7 @@ class Settings:
     knowledge_dir: Path
     min_retrieval_score: float
     max_context_docs: int
+    rag_admin_token: str | None = None
 
 
 def get_settings() -> Settings:
@@ -32,5 +33,5 @@ def get_settings() -> Settings:
         knowledge_dir=knowledge_dir,
         min_retrieval_score=float(os.getenv("MIN_RETRIEVAL_SCORE", "0.12")),
         max_context_docs=int(os.getenv("MAX_CONTEXT_DOCS", "4")),
+        rag_admin_token=os.getenv("RAG_ADMIN_TOKEN") or None,
     )
-

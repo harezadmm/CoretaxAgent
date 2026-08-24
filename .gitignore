@@ -3,6 +3,8 @@
 __pycache__/
 .pytest_cache/
 .vercel/
+.claude/
+CLAUDE.md
 .python-version
 uv.lock
 *.py[cod]
