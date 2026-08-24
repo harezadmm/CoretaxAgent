@@ -71,11 +71,13 @@ const HOURLY_WEIGHT = [
 /**
  * Calls per hour at the busiest point of the day.
  *
- * Sized against the eight AI desks rather than against a real DJP call volume:
- * at this rate roughly half the floor is on a call during the morning peak, so
- * the office reads as busy without every desk being permanently occupied.
+ * Sized against the eighteen AI desks rather than against a real DJP call
+ * volume: with calls averaging a minute, this keeps roughly half the floor on a
+ * call through the morning peak, so the office reads as busy without every desk
+ * being permanently occupied. Grow the floor and this has to grow with it, or
+ * most of the new desks simply sit idle.
  */
-const PEAK_CALLS_PER_HOUR = 260;
+const PEAK_CALLS_PER_HOUR = 600;
 
 const TOPICS = [
   { name: 'Aktivasi akun Coretax', weight: 32, short: 'Aktivasi akun' },
@@ -732,6 +734,9 @@ export function metrics(state) {
     avgHandleSec,
     avgWaitSec,
     staffOnDuty: state.staff.filter((person) => person.present).length,
+    /** Desk counts come from the layout, which the editor can change. */
+    aiDesks: state.agents.length,
+    staffDesks: state.staff.length,
   };
 }
 

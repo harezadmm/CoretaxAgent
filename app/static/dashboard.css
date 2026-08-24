@@ -109,9 +109,10 @@ button,input{ font:inherit; } button{ cursor:pointer; } .app-shell{ display:flex
 .office-tools .outline-button{ padding:6px 9px; }
 .office-tools .outline-button.active{ border-color:var(--amber); color:var(--amber); }
 
-/* Height drives the fit scale: the room needs ~816px to reach 3x, so a taller
-   display gets bigger sprites instead of wider empty margins. */
-.office-canvas-wrap{ position:relative; height:clamp(420px,58vh,760px); background:#07090b; border-bottom:1px solid #1c2329; touch-action:none; }
+/* The 36x17 room needs 1152x576 device pixels to draw at 2x. The floor is 576
+   art pixels tall, so the minimum height is set to keep that whole scale rather
+   than let a short viewport drop the office to an unreadable 1x. */
+.office-canvas-wrap{ position:relative; height:clamp(576px,62vh,860px); background:#07090b; border-bottom:1px solid #1c2329; touch-action:none; }
 #office-canvas{ display:block; width:100%; height:100%; image-rendering:pixelated; cursor:grab; }
 
 .office-hud{ position:absolute; top:12px; left:12px; display:flex; gap:8px; pointer-events:none; }
@@ -185,5 +186,7 @@ button,input{ font:inherit; } button{ cursor:pointer; } .app-shell{ display:flex
 .editor-status.ok{ color:var(--green); }
 .editor-status.warn{ color:var(--amber); }
 
-@media(max-width:1240px) {.office-layout{ grid-template-columns:1fr; }.office-side{ grid-template-columns:repeat(3,1fr); }}
-@media(max-width:1050px) {.office-side{ grid-template-columns:1fr; }.office-metrics{ grid-template-columns:repeat(2,1fr); }.office-canvas-wrap{ height:440px; }}
+/* Below ~1700px the side panel costs the canvas the 1152px it needs for a 2x
+   floor, so it moves under the office rather than beside it. */
+@media(max-width:1700px) {.office-layout{ grid-template-columns:1fr; }.office-side{ grid-template-columns:repeat(3,1fr); }}
+@media(max-width:1050px) {.office-side{ grid-template-columns:1fr; }.office-metrics{ grid-template-columns:repeat(2,1fr); }.office-canvas-wrap{ height:clamp(360px,52vh,520px); }}

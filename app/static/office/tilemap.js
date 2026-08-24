@@ -27,12 +27,11 @@ const CARPET_TILES = new Set([TILE.CARPET_AI, TILE.CARPET_STAFF]);
 export const DIR = { DOWN: 'down', UP: 'up', RIGHT: 'right', LEFT: 'left' };
 
 /**
- * Bumped to 2 when `seat.monitor.row` changed from the tile above the desk to
- * the desk's own row. A layout saved under version 1 carries the old meaning,
- * which would float every monitor a tile too high, so those are discarded and
- * rebuilt from the default rather than migrated.
+ * Version history, all of which invalidate a stored layout rather than migrate it:
+ *   2 — `seat.monitor.row` became the desk's own row, not the tile above it.
+ *   3 — the room grew from 26x16 to 36x17, with more desks in both zones.
  */
-export const LAYOUT_VERSION = 2;
+export const LAYOUT_VERSION = 3;
 
 /** Tiles a character may stand on, ignoring furniture. */
 export function isWalkableTile(tile) {
@@ -226,31 +225,35 @@ export function findPath(layout, blocked, from, to) {
 // ── Default layout ──────────────────────────────────────────────────────────
 
 /**
- * Room size is chosen so the whole floor fits the dashboard's canvas at a whole
- * scale factor. At 26x16 the map is 416x272 art pixels, which lands on 2x in the
- * default two-column layout and 3x on a wide monitor. Growing the room by even a
- * few columns drops it to 1x, where 16px sprites are too small to read.
+ * Room size is chosen so the whole floor fills the dashboard's canvas at a whole
+ * scale factor. At 36x17 the map is 576x288 art pixels, which needs 1152x576
+ * device pixels to render at 2x — just inside a full-width canvas on a 1440px
+ * viewport once the side panel stacks below. Any wider and the fit drops to 1x,
+ * where 16px sprites stop being readable.
  */
-const COLS = 26;
-const ROWS = 16;
+const COLS = 36;
+const ROWS = 17;
 
-/** Desk bands: a 3-wide desk occupies two rows, the seat sits one row below it. */
-const AI_DESK_COLS = [1, 5, 9, 13];
-const AI_DESK_ROWS = [2, 6];
 /**
- * The escalation desks are packed two abreast, which leaves column 24 as the
- * only way between the upper and lower band — a desk row spans its full width
- * and would otherwise seal the top of the zone off from the partition door.
+ * Desk bands: a 3-wide desk occupies two rows, the seat sits one row below it,
+ * and the next band starts four rows down so nobody sits inside a desk.
  */
-const STAFF_DESK_COLS = [18, 21];
-const STAFF_DESK_ROWS = [2, 6];
+const AI_DESK_COLS = [1, 5, 9, 13, 17, 21];
+const AI_DESK_ROWS = [2, 6, 10];
+/**
+ * The escalation desks are packed two abreast, which leaves column 34 as the
+ * only way between the bands — a desk row spans its full width and would
+ * otherwise seal the upper desks off from the partition door.
+ */
+const STAFF_DESK_COLS = [28, 31];
+const STAFF_DESK_ROWS = [2, 6, 10];
 
 /** Column of the partition dividing the AI floor from the escalation desks. */
-const PARTITION_COL = 17;
+const PARTITION_COL = 27;
 /** Rows left open in the partition so characters can cross between zones. */
-const PARTITION_GAP_ROWS = [8, 9];
+const PARTITION_GAP_ROWS = [13, 14];
 /** Columns left open in the bottom wall — the way in and out of the office. */
-const DOOR_COLS = [11, 12];
+const DOOR_COLS = [17, 18];
 
 let uidCounter = 0;
 function uid(prefix) {
@@ -291,7 +294,7 @@ export function createDefaultLayout() {
   }
 
   // Accent carpet under each working area, so the two zones read apart at a glance.
-  for (let row = 1; row <= 9; row += 1) {
+  for (let row = 1; row <= 12; row += 1) {
     for (let col = 1; col <= PARTITION_COL - 1; col += 1) setTile(layout, col, row, TILE.CARPET_AI);
     for (let col = PARTITION_COL + 1; col <= COLS - 2; col += 1) {
       setTile(layout, col, row, TILE.CARPET_STAFF);
@@ -343,34 +346,42 @@ export function createDefaultLayout() {
   }
 
   // Escalation inbox: the tray cases pile onto when no operator is on shift.
-  place(furniture, 'SMALL_TABLE_FRONT', 19, 11);
-  place(furniture, 'BOOKSHELF', 22, 13);
+  place(furniture, 'SMALL_TABLE_FRONT', 29, 14);
+  place(furniture, 'BOOKSHELF', 32, 14);
+  // Anything two tiles tall on the last floor row would render through the
+  // bottom wall, so the trim along row 15 is all single-tile pieces.
+  place(furniture, 'POT', 34, 15);
 
   // Partition greenery, softening the wall between the zones.
-  for (const row of [1, 3, 5, 11, 13]) place(furniture, 'PLANT', PARTITION_COL - 1, row);
+  for (const row of [1, 3, 5, 7, 9, 11]) place(furniture, 'PLANT', PARTITION_COL - 1, row);
 
-  // Break area on the AI floor.
-  place(furniture, 'SOFA_FRONT', 3, 12);
-  place(furniture, 'COFFEE_TABLE', 6, 12);
-  place(furniture, 'SOFA_SIDE', 9, 11);
-  place(furniture, 'LARGE_PLANT', 1, 10);
-  place(furniture, 'DOUBLE_BOOKSHELF', 13, 11);
-  place(furniture, 'BIN', 15, 13);
-  place(furniture, 'CACTUS', 16, 10);
-  place(furniture, 'COFFEE', 7, 12);
+  // Break area along the bottom of the AI floor.
+  place(furniture, 'LARGE_PLANT', 1, 13);
+  place(furniture, 'SOFA_FRONT', 4, 14);
+  place(furniture, 'COFFEE_TABLE', 7, 14);
+  place(furniture, 'COFFEE', 8, 14);
+  place(furniture, 'SOFA_SIDE', 10, 13);
+  place(furniture, 'DOUBLE_BOOKSHELF', 13, 13);
+  place(furniture, 'WOODEN_BENCH', 16, 15);
+  place(furniture, 'CACTUS', 20, 13);
+  place(furniture, 'CUSHIONED_BENCH', 22, 15);
+  place(furniture, 'SMALL_TABLE_FRONT', 23, 13);
+  place(furniture, 'BIN', 25, 15);
+  place(furniture, 'POT', 12, 15);
 
   // Wall fittings.
-  place(furniture, 'CLOCK', 11, 0);
+  place(furniture, 'CLOCK', 17, 0);
   place(furniture, 'WHITEBOARD', 2, 0);
-  place(furniture, 'LARGE_PAINTING', 7, 0);
+  place(furniture, 'LARGE_PAINTING', 8, 0);
   place(furniture, 'SMALL_PAINTING', 14, 0);
-  place(furniture, 'SMALL_PAINTING_2', 21, 0);
+  place(furniture, 'SMALL_PAINTING_2', 22, 0);
+  place(furniture, 'SMALL_PAINTING', 31, 0);
 
   layout.landmarks = {
     /** Tile an AI agent walks to in order to hand a case over. */
-    inbox: { col: 19, row: 10 },
+    inbox: { col: 29, row: 13 },
     /** Where the inbox tray is drawn, and where the case pile stacks. */
-    inboxTray: { col: 19, row: 11 },
+    inboxTray: { col: 29, row: 14 },
     /** Just inside the entrance — staff spawn and despawn here. */
     door: { col: DOOR_COLS[0], row: ROWS - 2 },
   };

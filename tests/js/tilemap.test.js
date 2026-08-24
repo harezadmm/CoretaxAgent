@@ -34,11 +34,36 @@ test('the default office passes its own validation', () => {
   assert.deepEqual(validateLayout(createDefaultLayout(), catalog), []);
 });
 
-test('the default office has eight AI desks and four escalation desks', () => {
+test('the default office has eighteen AI desks and six escalation desks', () => {
   const layout = createDefaultLayout();
-  assert.equal(layout.seats.filter((seat) => seat.kind === 'ai').length, 8);
-  assert.equal(layout.seats.filter((seat) => seat.kind === 'human').length, 4);
+  assert.equal(layout.seats.filter((seat) => seat.kind === 'ai').length, 18);
+  assert.equal(layout.seats.filter((seat) => seat.kind === 'human').length, 6);
   for (const seat of layout.seats) assert.ok(seat.monitor, `${seat.id} has no monitor`);
+});
+
+test('the floor still lands on a whole render scale', () => {
+  const layout = createDefaultLayout();
+  // render.js draws at a whole number of device pixels per art pixel; the room
+  // has to fit a realistic canvas at 2x or the sprites become unreadable.
+  const artWidth = layout.cols * 16;
+  const artHeight = layout.rows * 16 + 16; // plus the wall overhang row
+  assert.ok(artWidth * 2 <= 1152, `needs ${artWidth * 2}px of canvas width at 2x`);
+  assert.ok(artHeight * 2 <= 576, `needs ${artHeight * 2}px of canvas height at 2x`);
+});
+
+test('nothing on the last floor row pokes through the bottom wall', () => {
+  const layout = createDefaultLayout();
+  const lastFloorRow = layout.rows - 2;
+
+  for (const item of layout.furniture) {
+    const asset = catalog.assets[item.type];
+    const bottom = item.row + (asset?.fh ?? 1) - 1;
+    if (item.row === 0) continue; // wall decor hangs on the top wall by design
+    assert.ok(
+      bottom <= lastFloorRow,
+      `${item.type} at (${item.col},${item.row}) extends to row ${bottom}, past the floor`,
+    );
+  }
 });
 
 test('a monitor sits on its own desk, two rows above the seat', () => {
@@ -165,6 +190,11 @@ test('a stale or damaged stored layout is rejected instead of throwing', () => {
     deserializeLayout({ ...good, version: 1 }),
     null,
     'version 1 placed monitors a tile higher and must not be reused',
+  );
+  assert.equal(
+    deserializeLayout({ ...good, version: 2 }),
+    null,
+    'version 2 described the smaller 26x16 room and must not be reused',
   );
   assert.equal(deserializeLayout({ ...good, tiles: [1, 2, 3] }), null, 'tile count must match cols x rows');
   assert.equal(deserializeLayout({ ...good, seats: [] }), null, 'a layout with no seats has nobody to simulate');

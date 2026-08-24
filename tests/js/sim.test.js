@@ -78,7 +78,11 @@ test('a simulation started outside hours opens with the escalation desks staffed
 
   const metrics = sim.metrics();
   assert.equal(metrics.onShift, true);
-  assert.equal(metrics.staffOnDuty, 4, 'the office should not open onto empty escalation desks');
+  assert.equal(
+    metrics.staffOnDuty,
+    metrics.staffDesks,
+    'the office should not open onto empty escalation desks',
+  );
 });
 
 // ── Escalation queue ────────────────────────────────────────────────────────
@@ -94,7 +98,16 @@ test('cases raised outside office hours wait in the inbox', () => {
   assert.equal(metrics.staffOnDuty, 0, 'nobody should be at an escalation desk');
   assert.ok(metrics.escalated > 0, 'the AI should have escalated something overnight');
   assert.equal(metrics.casesResolved, 0, 'no case can be closed with nobody on duty');
-  assert.equal(queuedCases(sim.state).length, metrics.escalated, 'every escalation is still queued');
+
+  // A case counts as escalated the moment the AI gives up on it, but only joins
+  // the queue once the agent has finished walking it to the tray, so at any
+  // instant some are still in hand.
+  const inTransit = sim.state.agents.filter((agent) => agent.carryingCase).length;
+  assert.equal(
+    queuedCases(sim.state).length + inTransit,
+    metrics.escalated,
+    'every escalation is either queued or still being carried over',
+  );
 });
 
 test('the overnight backlog is drained after operators arrive', () => {
@@ -108,7 +121,7 @@ test('the overnight backlog is drained after operators arrive', () => {
 
   const metrics = sim.metrics();
   assert.equal(metrics.onShift, true);
-  assert.equal(metrics.staffOnDuty, 4, 'all four operators are back at their desks');
+  assert.equal(metrics.staffOnDuty, metrics.staffDesks, 'every operator is back at their desk');
   assert.ok(metrics.casesResolved > 0, 'operators should be closing cases');
   assert.ok(
     queuedCases(sim.state).length < backlog,

@@ -230,8 +230,8 @@ function emptyDetail(metrics) {
       <span><i class="legend-dot human"></i>Meja petugas — menangani pertanyaan yang tidak bisa dijawab AI</span>
       <span><i class="legend-dot inbox"></i>Inbox eskalasi — kasus menumpuk di luar jam kerja</span>
     </div>
-    <div class="office-row"><span>Meja AI aktif</span><b>${metrics.activeCalls} dari 8</b></div>
-    <div class="office-row"><span>Petugas bertugas</span><b>${metrics.staffOnDuty} dari 4</b></div>
+    <div class="office-row"><span>Meja AI aktif</span><b>${metrics.activeCalls} dari ${metrics.aiDesks}</b></div>
+    <div class="office-row"><span>Petugas bertugas</span><b>${metrics.staffOnDuty} dari ${metrics.staffDesks}</b></div>
     <div class="office-row"><span>Antrean panggilan</span><b>${metrics.waiting}</b></div>`;
 }
 
