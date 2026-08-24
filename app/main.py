@@ -40,17 +40,23 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# On Vercel these paths are served straight from the CDN and never reach the
-# function; the mount below only backs local development.
+# public/ is the CDN output directory on Vercel, which means it is served by
+# the edge and deliberately left out of the function bundle. Mounting it
+# unconditionally crashes the function at import time there, so the mount and
+# the dashboard route below exist only to back local development.
 PUBLIC_DIR = Path(__file__).resolve().parent.parent / "public"
 STATIC_DIR = PUBLIC_DIR / "static"
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+if STATIC_DIR.is_dir():
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/", include_in_schema=False)
 def dashboard() -> FileResponse:
     """Serve the local Coretax support-operations dashboard."""
-    return FileResponse(PUBLIC_DIR / "index.html")
+    index_file = PUBLIC_DIR / "index.html"
+    if not index_file.is_file():
+        raise HTTPException(status_code=404, detail="Dashboard tidak tersedia.")
+    return FileResponse(index_file)
 
 
 @app.get("/health")
