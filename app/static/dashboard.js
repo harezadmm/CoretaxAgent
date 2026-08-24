@@ -22,7 +22,7 @@ const viewLabels = {
   history: 'Call History',
   knowledge: 'Knowledge Base',
   analytics: 'Analytics',
-  workflow: 'Workflow Monitor',
+  office: 'Virtual Office',
   settings: 'Settings',
 };
 
@@ -34,78 +34,8 @@ function screenStat(label, value, note, tone = 'cyan') {
   return `<article class="screen-stat"><span class="stat-mark ${tone}"></span><p>${label}</p><strong>${value}</strong><small>${note}</small></article>`;
 }
 
-function workflowIcon(title, fallback) {
-  const key = /Incoming Call|Webhook/.test(title) ? 'webhook'
-    : /Twilio|Send Answer/.test(title) ? 'twilio'
-    : /Schedule KB/.test(title) ? 'schedule'
-    : /Get Coretax Docs/.test(title) ? 'github'
-    : /Extract.*Chunk|Documents/.test(title) ? 'document'
-    : /Vector Search|Upsert Vectors/.test(title) ? 'postgres'
-    : /Generate Embedding|Speech to Text|Detect Language|Coretax Agent|Generate Embeddings/.test(title) ? 'openai'
-    : /Text Normalization|Format Context|Validate Answer|Caller Metadata/.test(title) ? 'code'
-    : /User Query|Answer Ready/.test(title) ? 'pencil'
-    : /Can AI Answer/.test(title) ? 'decision'
-    : /Text to Speech/.test(title) ? 'tts'
-    : /Create Escalation/.test(title) ? 'http'
-    : /Notify Agent Team/.test(title) ? 'gmail'
-    : /Save Transcript/.test(title) ? 'drive'
-    : /Dashboard Update/.test(title) ? 'chart'
-    : /Alert on Failure/.test(title) ? 'slack'
-    : /Call Session|Update Session/.test(title) ? 'sheets'
-    : 'generic';
-  const paths = {
-    webhook: '<path d="M12 4v4M7 18l3-5M17 18l-3-5"/><circle cx="12" cy="4" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><circle cx="12" cy="12" r="3"/>',
-    twilio: '<circle cx="12" cy="12" r="8"/><circle cx="9" cy="9" r="1.3" fill="currentColor"/><circle cx="15" cy="9" r="1.3" fill="currentColor"/><circle cx="9" cy="15" r="1.3" fill="currentColor"/><circle cx="15" cy="15" r="1.3" fill="currentColor"/>',
-    sheets: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h6M12 9v10"/>',
-    schedule: '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
-    github: '<path d="M8 8l-3 4 3 4M16 8l3 4-3 4M13 6l-2 12"/>',
-    document: '<path d="M7 3h7l3 3v15H7z"/><path d="M14 3v4h4M10 12h4M10 16h4"/>',
-    postgres: '<path d="M7 6c0-3 10-3 10 0v9c0 3-10 3-10 0z"/><path d="M8 6c0 3 8 3 8 0M10 17v3M14 17v3"/>',
-    openai: '<path d="M12 4a4 4 0 0 1 4 4v1a4 4 0 0 1 4 4 4 4 0 0 1-4 4h-1a4 4 0 0 1-4 4 4 4 0 0 1-4-4v-1a4 4 0 0 1-4-4 4 4 0 0 1 4-4h1a4 4 0 0 1 4-4z"/><path d="M8 8l8 8M16 8l-8 8"/>',
-    code: '<path d="M9 7 5 12l4 5M15 7l4 5-4 5"/>',
-    pencil: '<path d="m5 16 1-4 9-9 3 3-9 9zM5 16l4-1"/>',
-    decision: '<path d="m12 4 7 4-7 4-7-4zM5 14l7 4 7-4M5 18l7 4 7-4"/>',
-    tts: '<path d="M6 10v4h3l4 4V6l-4 4zM17 9a4 4 0 0 1 0 6M19 7a7 7 0 0 1 0 10"/>',
-    http: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4a12 12 0 0 1 0 16M12 4a12 12 0 0 0 0 16"/>',
-    gmail: '<path d="M4 7l8 6 8-6v11H4zM4 7l8 6 8-6"/>',
-    drive: '<path d="m9 4 6 0 5 9H8zM9 4 4 13l4 7h10l-5-7"/>',
-    chart: '<path d="M5 19V9M10 19V5M15 19v-7M20 19V3"/>',
-    slack: '<circle cx="8" cy="8" r="2"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/><circle cx="16" cy="16" r="2"/><path d="M10 8h4M8 10v4M14 16h-4M16 14v-4"/>',
-    generic: `<text x="12" y="16" text-anchor="middle">${fallback}</text>`,
-  };
-  return `<i class="node-icon ${iconClassForWorkflowKey(key)}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[key]}</svg></i>`;
-}
-
-function iconClassForWorkflowKey(key) { return `icon-${key}`; }
-
-function workflowNode(iconClass, icon, title, subtitle, meta, state = 'SUCCESS') {
-  const triggerMark = /Incoming Call/.test(title) ? '<span class="workflow-trigger-mark" aria-hidden="true">ϟ</span>' : '';
-  return `<div class="n8n-node flow-node">${triggerMark}<span class="workflow-rendered-icon">${workflowIcon(title, icon)}</span><strong>${title}</strong><small>${subtitle}</small><em class="node-${state.toLowerCase()}">${state}</em>${meta ? `<span class="flow-node-meta">${meta}</span>` : ''}</div>`;
-}
-
-function workflowArrow(type = 'sync') {
-  return `<span class="flow-arrow ${type === 'async' ? 'async' : ''}" aria-hidden="true">›</span>`;
-}
-
-const workflowScreen = () => `${screenHeader('AUTOMATION CONTROL PLANE', 'Workflow Monitor', 'Pantau workflow n8n AI Agent Coretax dari panggilan masuk sampai jawaban atau eskalasi petugas.', '<button class="primary-button" data-action="run-workflow">▶ Run test execution</button>')}
-  <div class="workflow-summary"><span class="status-pill live-pill">● WORKFLOW ACTIVE</span><span>Last execution <b>2m 14s ago</b></span><span>Success rate <b class="success-text">98.7%</b></span><span>Avg. execution <b>1.84s</b></span><button class="outline-button" data-action="refresh-workflow">↻ Refresh</button></div>
-  <div class="workflow-layout workflow-v2"><article class="workflow-canvas-panel"><div class="workflow-toolbar"><div><p class="panel-kicker">N8N WORKFLOW · CORETAX AI AGENT V2</p><h3>Inbound call → Coretax answer → human escalation</h3></div><div class="canvas-tools"><button data-action="zoom-out">−</button><span>100%</span><button data-action="zoom-in">＋</button></div></div><div class="n8n-canvas workflow-canvas-v2"><div class="canvas-grid"></div><div class="workflow-zones">
-    <section class="workflow-zone zone-trigger"><div class="zone-heading"><span>1.</span> TRIGGER &amp; INPUT <em>REAL-TIME</em></div><div class="workflow-chain">${workflowNode('trigger','⚡','Incoming Call','Twilio Webhook','webhook','RUNNING')}${workflowArrow()}${workflowNode('voice','◉','Twilio','get: call','telephony')}${workflowArrow()}${workflowNode('data','▤','Call Session','Init · append','session')}${workflowArrow()}${workflowNode('code','{ }','Caller Metadata','Extract + sanitize','set')}</div></section>
-    <section class="workflow-zone zone-voice"><div class="zone-heading"><span>2.</span> VOICE PROCESSING <em>REAL-TIME</em></div><div class="workflow-chain">${workflowNode('search','◎','Download Audio','from Twilio','HTTP Request')}${workflowArrow()}${workflowNode('brain','✦','Speech to Text','Whisper ASR','OpenAI')}${workflowArrow()}${workflowNode('code','{ }','Normalize Text','Clean + format','Code')}${workflowArrow()}${workflowNode('brain','✦','Detect Language','Bahasa Indonesia','Classifier')}${workflowArrow()}${workflowNode('context','✎','User Query','Sanitized input','set')}</div></section>
-    <section class="workflow-zone zone-understanding"><div class="zone-heading"><span>3.</span> AI UNDERSTANDING <em>LLM + RAG</em></div><div class="workflow-chain">${workflowNode('brain','✦','Generate Embedding','User query','OpenAI')}${workflowArrow()}${workflowNode('data','▤','Vector Search','Coretax KB','pgvector')}${workflowArrow()}${workflowNode('code','{ }','Format Context','RAG prompt','Code')}${workflowArrow()}${workflowNode('brain','✦','Coretax Agent','Generate answer','LLM')}${workflowArrow()}${workflowNode('code','{ }','Validate Answer','Guardrails','Code')}${workflowArrow()}${workflowNode('context','✎','Answer Ready','Prepared response','set','RUNNING')}${workflowArrow()}${workflowNode('decision','◆','Can AI Answer?','Confidence check','if','RUNNING')}</div></section>
-    <section class="workflow-zone zone-decision"><div class="zone-heading"><span>4.</span> DECISION &amp; ESCALATION <em>HUMAN HANDOVER</em></div><div class="workflow-branch-row"><div class="branch-path branch-true"><span class="branch-label">true</span>${workflowNode('voice','◖','Text to Speech','Voice response','ElevenLabs')}${workflowArrow()}${workflowNode('trigger','↗','Send Answer','Back to caller','Twilio')}${workflowArrow()}${workflowNode('data','▤','Update Session','Answered','sheet')}</div><div class="branch-path branch-false"><span class="branch-label">false</span>${workflowNode('search','◎','Create Escalation','FastAPI ticket','HTTP Request','IDLE')}${workflowArrow('async')}${workflowNode('alert','✉','Notify Agent Team','Email + dashboard','Gmail','IDLE')}${workflowArrow('async')}${workflowNode('data','▤','Update Session','Escalated','sheet','IDLE')}</div></div></section>
-    <section class="workflow-zone zone-knowledge"><div class="zone-heading"><span>5.</span> KNOWLEDGE BASE <em>ASYNC / BACKGROUND</em></div><div class="workflow-chain">${workflowNode('trigger','◷','Schedule KB Sync','Daily trigger','cron')}${workflowArrow('async')}${workflowNode('data','⌂','Get Coretax Docs','GitHub / Drive','source')}${workflowArrow('async')}${workflowNode('code','{ }','Extract &amp; Chunk','Documents','splitter')}${workflowArrow('async')}${workflowNode('brain','✦','Generate Embeddings','Document chunks','OpenAI')}${workflowArrow('async')}${workflowNode('data','▤','Upsert Vectors','Postgres KB','pgvector')}</div></section>
-    <section class="workflow-zone zone-monitoring"><div class="zone-heading"><span>6.</span> MONITORING &amp; LOGGING <em>ASYNC</em></div><div class="workflow-chain">${workflowNode('data','▤','Call Session Log','Transcript + status','append')}${workflowArrow('async')}${workflowNode('data','◆','Save Transcript','Drive archive','Google Drive')}${workflowArrow('async')}${workflowNode('chart','▥','Dashboard Update','Live metrics','HTTP Request')}${workflowArrow('async')}${workflowNode('alert','✦','Alert on Failure','Operator channel','Slack','IDLE')}</div></section>
-  </div></div></article><aside class="execution-panel"><div class="table-panel-head"><div><p class="panel-kicker">EXECUTION LOG</p><h3>Latest runs</h3></div><button class="text-button">View all ›</button></div><div class="execution-list"><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001284</strong><small>Inbound call · Aktivasi akun</small></div><b>1.84s</b></div><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001283</strong><small>Inbound call · Kode billing</small></div><b>2.12s</b></div><div class="execution-item"><i class="exec-state warning">!</i><div><strong>Run #001282</strong><small>Escalated · Data NIK</small></div><b>3.48s</b></div><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001281</strong><small>Inbound call · Login</small></div><b>1.63s</b></div></div><div class="workflow-legend"><span><i class="legend-node success"></i>Completed</span><span><i class="legend-node running"></i>Running</span><span><i class="legend-node idle"></i>Idle</span></div></aside></div>`;
-
-const workflowScreenExact = () => `${screenHeader('AUTOMATION CONTROL PLANE', 'Workflow Monitor', 'Pantau workflow n8n AI Agent Coretax dari panggilan masuk sampai jawaban atau eskalasi petugas.', '<button class="primary-button" data-action="run-workflow">&#9654; Run test execution</button>')}
-  <article class="workflow-reference-panel"><div class="workflow-toolbar"><div><p class="panel-kicker">N8N WORKFLOW · CORETAX AI AGENT V2</p><h3>Inbound call → Coretax answer → human escalation</h3></div><div class="canvas-tools"><button data-action="zoom-out">−</button><span>100%</span><button data-action="zoom-in">＋</button></div></div><div class="n8n-canvas workflow-reference-canvas"><div class="canvas-grid"></div><div class="workflow-reference-content">
-    <div class="workflow-reference-top"><section class="workflow-zone zone-trigger"><div class="zone-heading"><span>1.</span> TRIGGER &amp; INPUT <em>REAL-TIME</em></div><div class="workflow-chain">${workflowNode('trigger','⚡','Incoming Call','Twilio Webhook','webhook','RUNNING')}${workflowArrow()}${workflowNode('voice','◉','Twilio','get: call','success')}${workflowArrow()}${workflowNode('data','▤','Call Session','Init · append','sheet')}${workflowArrow()}${workflowNode('code','{ }','Extract Caller Info &amp; Metadata','set','')}</div></section><section class="workflow-zone zone-voice"><div class="zone-heading"><span>2.</span> VOICE PROCESSING (REAL-TIME)</div><div class="workflow-chain">${workflowNode('search','◎','Download Audio from Twilio','HTTP Request','')}${workflowArrow()}${workflowNode('brain','✦','Speech to Text','Whisper ASR','OpenAI Whisper')}${workflowArrow()}${workflowNode('code','{ }','Text Normalization &amp; Clean','Code','')}${workflowArrow()}${workflowNode('brain','✦','Detect Language','Bahasa Indonesia','Chat Model')}${workflowArrow()}${workflowNode('context','✎','User Query','Sanitized Input','set')}</div></section></div>
-    <section class="workflow-zone zone-understanding"><div class="zone-heading"><span>3.</span> AI UNDERSTANDING (LLM + RAG)</div><div class="workflow-chain">${workflowNode('brain','✦','Generate Embedding','User Query','OpenAI Embeddings')}${workflowArrow()}${workflowNode('data','▤','Vector Search','Coretax KB','Postgres PGVector')}${workflowArrow()}${workflowNode('code','{ }','Format Context','RAG Prompt','Code')}${workflowArrow()}${workflowNode('brain','✦','LLM · Coretax Agent','Generate answer','OpenAI Chat Model')}${workflowArrow()}${workflowNode('code','{ }','Validate Answer','Guardrails','Code')}${workflowArrow()}${workflowNode('context','✎','Answer Ready','Prepared response','set')}${workflowArrow()}${workflowNode('decision','◆','Can AI Answer?','Confidence check','if','RUNNING')}</div></section>
-    <section class="workflow-zone zone-decision"><div class="zone-heading"><span>4.</span> DECISION &amp; ESCALATION <em>HUMAN HANDOVER</em></div><div class="workflow-branch-row"><div class="branch-path branch-true"><span class="branch-label">true</span>${workflowNode('voice','◖','Text to Speech','Voice response','ElevenLabs')}${workflowArrow()}${workflowNode('trigger','↗','Send Answer back to Caller','Twilio','')}${workflowArrow()}${workflowNode('data','▤','Update Session','Answered','sheet')}</div><div class="branch-path branch-false"><span class="branch-label">false</span>${workflowNode('search','◎','Create Escalation','FastAPI ticket','HTTP Request','IDLE')}${workflowArrow('async')}${workflowNode('alert','✉','Notify Agent Team','Email + dashboard','Gmail','IDLE')}${workflowArrow('async')}${workflowNode('data','▤','Update Session','Escalated','sheet','IDLE')}</div></div></section>
-    <div class="workflow-reference-async"><section class="workflow-zone zone-knowledge"><div class="zone-heading"><span>5.</span> KNOWLEDGE BASE (ASYNC / BACKGROUND)</div><div class="workflow-chain">${workflowNode('trigger','◷','Schedule KB Sync','Daily trigger','cron')}${workflowArrow('async')}${workflowNode('data','⌂','Get Coretax Docs','GitHub / Drive','source')}${workflowArrow('async')}${workflowNode('code','{ }','Extract &amp; Chunk Documents','Text splitter','')}${workflowArrow('async')}${workflowNode('brain','✦','Generate Embeddings','Document chunks','OpenAI Embeddings')}${workflowArrow('async')}${workflowNode('data','▤','Upsert Vectors to Postgres','Postgres PGVector','')}</div></section><section class="workflow-zone zone-monitoring"><div class="zone-heading"><span>6.</span> MONITORING &amp; LOGGING (ASYNC)</div><div class="workflow-chain">${workflowNode('data','▤','Call Session Log','Transcript + status','append')}${workflowArrow('async')}${workflowNode('data','◆','Save Transcript','Drive archive','Google Drive')}${workflowArrow('async')}${workflowNode('chart','▥','Dashboard Update','Live metrics','HTTP Request')}${workflowArrow('async')}${workflowNode('alert','✦','Alert on Failure','Operator channel','Slack','IDLE')}</div></section></div>
-    <div class="workflow-reference-notes"><article class="workflow-info-panel"><h4>KETERANGAN ALUR</h4><ol><li>Panggilan masuk → Twilio webhook menerima event.</li><li>Audio diproses real-time → STT menjadi teks.</li><li>LLM + RAG mencari jawaban berdasarkan knowledge base Coretax.</li><li>Jika bisa dijawab → TTS → kirim jawaban ke caller.</li><li>Jika tidak → eskalasi ke petugas.</li><li>Semua interaksi dicatat untuk monitoring dan evaluasi.</li></ol></article><article class="workflow-info-panel"><h4>TEKNOLOGI &amp; INTEGRASI <small>(n8n Nodes)</small></h4><div class="workflow-tech-grid"><span>◉ Webhook</span><span>✦ OpenAI Chat Model</span><span>◎ HTTP Request</span><span>✦ OpenAI Embeddings</span><span>◷ Schedule Trigger</span><span>▤ Postgres PGVector</span><span>◉ Twilio</span><span>{ } Code / Function</span><span>▤ Google Sheets</span><span>⌂ Google Drive</span><span>✉ Gmail</span><span>◈ GitHub</span><span>◆ Slack</span></div></article><article class="workflow-info-panel"><h4>KOMPONEN UTAMA CORETAX AGENT</h4><ul><li>Voice Processing (STT + TTS)</li><li>LLM + RAG (Understanding)</li><li>Knowledge Base (Dokumen Resmi Coretax)</li><li>Decision &amp; Escalation (AI / Human Handover)</li><li>Monitoring &amp; Logging (Transparansi &amp; Evaluasi)</li></ul></article><article class="workflow-info-panel"><h4>ALUR EKSEKUSI</h4><div class="workflow-legend-lines"><span><i class="line-solid"></i>Real-time (Synchronous)</span><span><i class="line-dashed"></i>Asinkron (Background)</span><span><i class="line-dotted"></i>Data / Knowledge Flow</span></div></article></div>
-  </div></div></article>`;
+const officeShell = () => `${screenHeader('LIVE OPERATIONS FLOOR', 'Virtual Office', 'Visualisasi real-time kantor call center Coretax: meja agent AI menjawab panggilan, kasus yang tidak bisa dijawab diantar ke meja petugas untuk ditindaklanjuti pada jam kerja.')}
+  <div id="office-mount" class="office-mount"><p class="subtle office-hint">Memuat kantor…</p></div>`;
 
 const screenTemplates = {
   live: () => `${screenHeader('REAL-TIME OPERATIONS', 'Live Calls', 'Pantau percakapan yang sedang berjalan dan ambil alih jika AI membutuhkan bantuan.', '<button class="primary-button" data-action="simulate-call">＋ Simulate incoming call</button>')}
@@ -123,16 +53,49 @@ const screenTemplates = {
   analytics: () => `${screenHeader('SERVICE INTELLIGENCE', 'Analytics', 'Pahami pola pertanyaan pengguna dan efektivitas AI dari waktu ke waktu.', '<div class="period-picker screen-period"><button>Day</button><button class="active">7 days</button><button>Month</button></div>')}
     <div class="screen-stats">${screenStat('CONTAINMENT RATE', '86.1%', '+4.8% this period', 'green')}${screenStat('AVG. RESPONSE', '1.8s', '−0.3s improvement', 'cyan')}${screenStat('CUSTOMER SENTIMENT', '4.6/5', 'Based on 312 ratings', 'violet')}${screenStat('TOPIC COVERAGE', '92%', 'Official KB match', 'amber')}</div>
     <div class="analytics-grid"><article class="table-panel analytics-chart"><div class="table-panel-head"><div><p class="panel-kicker">QUESTION VOLUME</p><h3>Topics over time</h3></div><span class="muted-label">7 DAYS · 1,284 CALLS</span></div><div class="mini-bars"><i style="height:43%"></i><i style="height:58%"></i><i style="height:48%"></i><i style="height:76%"></i><i style="height:66%"></i><i style="height:93%"></i><i style="height:81%"></i><i style="height:100%"></i><i style="height:87%"></i><i style="height:72%"></i><i style="height:90%"></i><i style="height:61%"></i></div><div class="mini-axis"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div></article><article class="table-panel"><div class="table-panel-head"><div><p class="panel-kicker">TOP INTENTS</p><h3>What users ask</h3></div></div><ol class="rank-list"><li><span>01</span><strong>Aktivasi akun</strong><b>32%</b></li><li><span>02</span><strong>Kode otorisasi</strong><b>24%</b></li><li><span>03</span><strong>Kode billing</strong><b>18%</b></li><li><span>04</span><strong>Pelaporan SPT</strong><b>14%</b></li><li><span>05</span><strong>Login Coretax</strong><b>12%</b></li></ol></article></div>`,
-  workflow: () => `${screenHeader('AUTOMATION CONTROL PLANE', 'Workflow Monitor', 'Pantau workflow n8n AI Agent Coretax dari panggilan masuk sampai jawaban atau eskalasi petugas.', '<button class="primary-button" data-action="run-workflow">▶ Run test execution</button>')}
-    <div class="workflow-summary"><span class="status-pill live-pill">● WORKFLOW ACTIVE</span><span>Last execution <b>2m 14s ago</b></span><span>Success rate <b class="success-text">98.7%</b></span><span>Avg. execution <b>1.84s</b></span><button class="outline-button" data-action="refresh-workflow">↻ Refresh</button></div>
-    <div class="workflow-layout"><article class="workflow-canvas-panel"><div class="workflow-toolbar"><div><p class="panel-kicker">N8N WORKFLOW · CORETAX AI AGENT V1</p><h3>Inbound call → AI answer → human escalation</h3></div><div class="canvas-tools"><button data-action="zoom-out">−</button><span>100%</span><button data-action="zoom-in">＋</button></div></div><div class="n8n-canvas"><div class="canvas-grid"></div><div class="workflow-link link-a"></div><div class="workflow-link link-b"></div><div class="workflow-link link-c"></div><div class="workflow-link link-d"></div><div class="workflow-link link-e"></div><div class="workflow-link link-f"></div><div class="workflow-link link-g"></div><div class="workflow-link link-h"></div><div class="n8n-node node-trigger"><i class="node-icon trigger">◷</i><strong>Incoming Call</strong><small>Webhook / Twilio</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-context"><i class="node-icon context">✎</i><strong>Set Context</strong><small>Caller + session</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-stt"><i class="node-icon voice">◒</i><strong>Speech to Text</strong><small>Whisper / ASR</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-router"><i class="node-icon code">{ }</i><strong>Intent Router</strong><small>Classify question</small><em class="node-running">RUNNING</em></div><div class="n8n-node node-rag"><i class="node-icon search">⌕</i><strong>Coretax RAG</strong><small>3,035 chunks</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-llm"><i class="node-icon brain">✦</i><strong>AI Agent</strong><small>LLM + Guardrails</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-tts"><i class="node-icon voice">◖</i><strong>Text to Speech</strong><small>Return voice response</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-escalate"><i class="node-icon alert">⚠</i><strong>Create Escalation</strong><small>Case + staff queue</small><em class="node-idle">IDLE</em></div><div class="n8n-node node-log"><i class="node-icon data">▤</i><strong>Log Conversation</strong><small>Save transcript</small><em class="node-ok">SUCCESS</em></div><div class="n8n-node node-notify"><i class="node-icon notify">✉</i><strong>Notify Staff</strong><small>Email / dashboard</small><em class="node-idle">IDLE</em></div></div></article><aside class="execution-panel"><div class="table-panel-head"><div><p class="panel-kicker">EXECUTION LOG</p><h3>Latest runs</h3></div><button class="text-button">View all ›</button></div><div class="execution-list"><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001284</strong><small>Inbound call · Aktivasi akun</small></div><b>1.84s</b></div><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001283</strong><small>Inbound call · Kode billing</small></div><b>2.12s</b></div><div class="execution-item"><i class="exec-state warning">!</i><div><strong>Run #001282</strong><small>Escalated · Data NIK</small></div><b>3.48s</b></div><div class="execution-item"><i class="exec-state success">✓</i><div><strong>Run #001281</strong><small>Inbound call · Login</small></div><b>1.63s</b></div></div><div class="workflow-legend"><span><i class="legend-node success"></i>Completed</span><span><i class="legend-node running"></i>Running</span><span><i class="legend-node idle"></i>Idle</span></div></aside></div>`,
-  workflow: workflowScreenExact,
+  office: officeShell,
   settings: () => `${screenHeader('SYSTEM CONFIGURATION', 'Settings', 'Atur perilaku agent, routing eskalasi, dan koneksi operasional.', '<button class="primary-button" data-action="save-settings">Save changes</button>')}
     <div class="settings-grid"><article class="table-panel settings-panel"><div class="table-panel-head"><div><p class="panel-kicker">AI AGENT</p><h3>Response policy</h3></div><span class="status-pill live-pill">● CONFIGURED</span></div><label class="setting-row"><span><strong>Use official sources only</strong><small>AI menolak jawaban di luar knowledge base.</small></span><input type="checkbox" checked /></label><label class="setting-row"><span><strong>Escalate personal questions</strong><small>Data personal selalu diteruskan ke petugas.</small></span><input type="checkbox" checked /></label><label class="setting-row"><span><strong>Record transcript</strong><small>Simpan transkrip untuk audit dan evaluasi.</small></span><input type="checkbox" checked /></label></article><article class="table-panel settings-panel"><div class="table-panel-head"><div><p class="panel-kicker">OPERATIONS</p><h3>Routing & notifications</h3></div></div><label class="field-label">Escalation team<select><option>Coretax Support Desk</option><option>Taxpayer Service</option></select></label><label class="field-label">Priority threshold<select><option>Personal or transactional</option><option>Low confidence only</option></select></label><label class="field-label">Notification channel<select><option>Dashboard + Email</option><option>Dashboard only</option></select></label></article></div>`,
 };
 
+/**
+ * The Virtual Office runs a simulation and an animation loop, so unlike the
+ * other views it cannot simply be thrown away with the markup — leaving it
+ * mounted would keep a full frame loop running behind whatever view replaced it.
+ */
+let officeSession = null;
+let officeToken = 0;
+
+function teardownOffice() {
+  officeToken += 1;
+  if (officeSession) {
+    officeSession.destroy();
+    officeSession = null;
+  }
+}
+
+function mountOfficeView() {
+  const token = officeToken;
+  const mount = screenStage.querySelector('#office-mount');
+  import('/static/office/index.js')
+    .then(({ mountOffice }) => {
+      // The user may have navigated away while the module was still loading.
+      if (token !== officeToken || !mount.isConnected) return null;
+      return mountOffice(mount);
+    })
+    .then((session) => {
+      if (!session) return;
+      if (token !== officeToken) session.destroy();
+      else officeSession = session;
+    })
+    .catch((error) => {
+      mount.innerHTML = `<p class="subtle office-hint">Gagal memuat Virtual Office: ${error.message}</p>`;
+    });
+}
+
 function navigateToView(view) {
   if (view !== 'overview') stopDotPlotAnimation();
+  teardownOffice();
   document.querySelectorAll('.nav-item').forEach((entry) => entry.classList.toggle('active', entry.dataset.view === view));
   document.querySelector('#page-title').textContent = viewLabels[view] || view;
   if (view === 'overview') {
@@ -144,6 +107,7 @@ function navigateToView(view) {
   overviewView.hidden = true;
   screenStage.hidden = false;
   screenStage.innerHTML = screenTemplates[view] ? screenTemplates[view]() : screenTemplates.overview?.() || '';
+  if (view === 'office') mountOfficeView();
   screenStage.querySelectorAll('.filter-pills button').forEach((button) => button.addEventListener('click', () => {
     screenStage.querySelectorAll('.filter-pills button').forEach((entry) => entry.classList.remove('active'));
     button.classList.add('active');

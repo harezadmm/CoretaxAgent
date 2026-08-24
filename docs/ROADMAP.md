@@ -5,7 +5,8 @@
 - Knowledge base resmi dikumpulkan dan diaudit.
 - Agent teks dengan retrieval dan eskalasi tersedia.
 - API `/health` dan `/api/ask` tersedia.
-- Dashboard support operations dan workflow reference tersedia.
+- Dashboard support operations tersedia.
+- Virtual Office: visualisasi real-time lantai call center dan alur eskalasi ke petugas.
 - Deploy Vercel aktif.
 
 ## Fase 1 — Demo terpadu
