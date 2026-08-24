@@ -21,6 +21,7 @@ class Chunk:
     content: str
     source_url: str | None = None
     source_type: str | None = None
+    validity_status: str | None = None
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,13 @@ class KnowledgeBase:
             if not text:
                 continue
             text, metadata = self._extract_front_matter(text)
+            if metadata.get("source_type") == "official_regulation":
+                try:
+                    extracted_chars = int(metadata.get("extracted_chars", "0") or "0")
+                except ValueError:
+                    extracted_chars = 0
+                if metadata.get("extraction_status") == "warning" or extracted_chars < 150:
+                    continue
             page_count = text.count("## Halaman ")
             empty_page_count = text.count(
                 "[Halaman tidak memiliki teks yang dapat diekstrak.]"
@@ -104,6 +112,7 @@ class KnowledgeBase:
                         content=content,
                         source_url=metadata.get("source_url"),
                         source_type=metadata.get("source_type"),
+                        validity_status=metadata.get("validity_status"),
                     )
                 )
             buffer.clear()
@@ -159,6 +168,12 @@ class KnowledgeBase:
                 score *= 0.65
             if chunk.source_type == "official_html":
                 score *= 1.06
+            if chunk.source_type == "official_regulation":
+                status = (chunk.validity_status or "").casefold()
+                if "aktif" in status and "tidak" not in status:
+                    score *= 1.08
+                elif any(term in status for term in ("tidak aktif", "dicabut", "berlaku")):
+                    score *= 0.88
             score = min(1.0, score)
             results.append(SearchResult(chunk=chunk, score=round(score, 4)))
 

@@ -12,7 +12,10 @@ Knowledge base ini ditujukan untuk bantuan penggunaan Coretax dan informasi umum
 - pelaporan SPT;
 - kode billing, pembayaran, deposit, dan pemindahbukuan;
 - layanan perpajakan dan kendala penggunaan yang didokumentasikan DJP;
+- peraturan perpajakan dan regulasi administrasi yang dipublikasikan pada katalog resmi DJP, dengan tanggal dan status katalog;
 - panduan untuk segmen wajib pajak tertentu yang tersedia pada indeks resmi.
+
+Regulasi historis disimpan untuk konteks perubahan dan penelusuran, tetapi regulasi berstatus aktif diprioritaskan saat retrieval. Status katalog bukan pengganti verifikasi hukum; untuk keputusan atau kasus personal, agent tetap mengarahkan pengguna ke kanal resmi DJP.
 
 ## Di luar kewenangan agent
 

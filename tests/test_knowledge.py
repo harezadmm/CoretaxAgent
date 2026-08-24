@@ -74,3 +74,36 @@ def test_mostly_image_only_pdf_extract_is_not_indexed(tmp_path: Path) -> None:
     )
 
     assert KnowledgeBase(tmp_path).chunks == []
+
+
+def test_regulation_warning_is_excluded_and_active_status_is_retained(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "warning.md").write_text(
+        "---\n"
+        'source_type: "official_regulation"\n'
+        'extraction_status: "warning"\n'
+        "extracted_chars: 99\n"
+        'validity_status: "Aktif"\n'
+        "---\n\n"
+        "# Metadata only\n\nDokumen ini hanya metadata.",
+        encoding="utf-8",
+    )
+    (tmp_path / "active.md").write_text(
+        "---\n"
+        'source_type: "official_regulation"\n'
+        'extraction_status: "ok"\n'
+        "extracted_chars: 400\n"
+        'validity_status: "Aktif"\n'
+        'source_url: "https://example.test/active"\n'
+        "---\n\n"
+        "# Ketentuan kode billing\n\n"
+        "Ketentuan kode billing aktif untuk pembayaran pajak.",
+        encoding="utf-8",
+    )
+
+    knowledge_base = KnowledgeBase(tmp_path)
+
+    assert all(chunk.document != "warning.md" for chunk in knowledge_base.chunks)
+    assert knowledge_base.chunks[0].validity_status == "Aktif"
+    assert knowledge_base.search("ketentuan kode billing")[0].chunk.document == "active.md"

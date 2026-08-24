@@ -26,14 +26,15 @@ Voice provider, eksekusi n8n nyata, penyimpanan session, dan data dashboard prod
 
 ## Knowledge base resmi
 
-Snapshot awal diambil pada 21 Agustus 2026 dari situs resmi Direktorat Jenderal Pajak. Isinya mencakup:
+Snapshot diperbarui pada 24 Agustus 2026 dari situs resmi Direktorat Jenderal Pajak. Isinya mencakup:
 
 - 54 PDF panduan, manual, leaflet, dan materi Coretax;
 - 230 halaman FAQ Coretaxpedia;
-- 3.000+ potongan teks unik setelah deduplikasi;
-- manifest sumber berisi URL, hash file, ukuran, jumlah halaman, dan status ekstraksi.
+- 6.266 halaman detail regulasi resmi DJP dari katalog peraturan, termasuk PMK, PER, keputusan, dan regulasi historis;
+- 35.000+ potongan teks unik setelah deduplikasi;
+- manifest terpisah untuk corpus Coretax dan katalog regulasi, berisi URL, hash, tanggal, status hukum katalog, serta status ekstraksi.
 
-FAQ Coretaxpedia mendapat prioritas ringan dalam pencarian karena umumnya lebih baru daripada buku manual 2024. Jika jawaban tidak memiliki konteks yang memadai atau menyangkut tindakan personal/transaksional, agent melakukan eskalasi.
+FAQ Coretaxpedia mendapat prioritas ringan karena umumnya lebih baru daripada buku manual 2024. Regulasi yang berstatus aktif mendapat prioritas lebih tinggi daripada regulasi yang tidak aktif atau dicabut. Dokumen regulasi yang hanya berisi metadata ditandai `warning` dan tidak dimasukkan ke retrieval. Jika jawaban tidak memiliki konteks yang memadai atau menyangkut tindakan personal/transaksional, agent melakukan eskalasi.
 
 Struktur utama:
 
@@ -46,10 +47,13 @@ knowledge/
 └── _meta/                 # Manifest sumber dan curated layer
 ```
 
+Regulasi detail hasil sinkronisasi disimpan di `knowledge/regulations/` dan metadata katalog di `knowledge/_meta/regulations-manifest.json`.
+
 Untuk menyinkronkan ulang materi resmi:
 
 ```powershell
 python tools\sync_official_knowledge.py
+python tools\sync_official_regulations.py
 python tools\clean_extracted_text.py
 python tools\audit_knowledge.py
 ```
