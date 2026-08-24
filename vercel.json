@@ -6,7 +6,6 @@
       "excludeFiles": "{knowledge/source_files/**,tests/**,tools/**,work/**,.venv/**,.vercel/**,.claude/**,.pytest_cache/**,*.egg-info/**}"
     }
   },
-  "//": "This is `routes`, not `rewrites`, on purpose. A rewrite is only consulted after Vercel has tried to serve the request from the repository root as a static file, which made every source file downloadable: /app/agent.py, /app/config.py and /requirements.txt all returned 200 in production. `routes` without a `handle: filesystem` step never consults the filesystem at all, so every request reaches the function. The dashboard is unaffected because its assets are served by FastAPI's own /static mount.",
   "routes": [
     {
       "src": "/(.*)",
