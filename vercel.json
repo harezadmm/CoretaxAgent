@@ -8,16 +8,16 @@
   },
   "routes": [
     {
-      "src": "/static/assets/(.*)",
+      "src": "/static/(.*)",
       "headers": {
-        "cache-control": "public, max-age=31536000, immutable"
+        "cache-control": "public, max-age=600, stale-while-revalidate=86400"
       },
       "continue": true
     },
     {
-      "src": "/static/(.*)",
+      "src": "/static/assets/(.*)",
       "headers": {
-        "cache-control": "public, max-age=600, stale-while-revalidate=86400"
+        "cache-control": "public, max-age=86400, stale-while-revalidate=604800"
       },
       "continue": true
     },
