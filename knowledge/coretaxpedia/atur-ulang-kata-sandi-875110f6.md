@@ -2,7 +2,7 @@
 title: "Atur ulang kata sandi"
 source_url: "https://www.pajak.go.id/coretaxpedia/atur-ulang-kata-sandi"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

@@ -2,7 +2,7 @@
 title: "Pembuatan kode billing PPN luar daerah pabean"
 source_url: "https://www.pajak.go.id/coretaxpedia/pembuatan-kode-billing-ppn-luar-daerah-pabean"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

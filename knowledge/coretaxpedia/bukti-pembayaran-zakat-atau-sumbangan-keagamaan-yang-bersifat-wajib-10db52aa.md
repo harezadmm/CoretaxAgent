@@ -2,7 +2,7 @@
 title: "Bukti Pembayaran Zakat atau Sumbangan Keagamaan yang Bersifat Wajib"
 source_url: "https://www.pajak.go.id/coretaxpedia/bukti-pembayaran-zakat-atau-sumbangan-keagamaan-yang-bersifat-wajib"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

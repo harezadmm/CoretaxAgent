@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import math
 import re
+from collections import Counter
 from hashlib import sha256
 from dataclasses import dataclass
 from pathlib import Path
+from threading import RLock
 
 
 TOKEN_PATTERN = re.compile(r"[a-zA-Z0-9]+", re.UNICODE)
@@ -21,6 +23,7 @@ class Chunk:
     content: str
     source_url: str | None = None
     source_type: str | None = None
+    validity_status: str | None = None
 
 
 @dataclass(frozen=True)
@@ -32,7 +35,20 @@ class SearchResult:
 class KnowledgeBase:
     def __init__(self, directory: Path):
         self.directory = directory
-        self.chunks = self._load_chunks()
+        self._lock = RLock()
+        self.chunks: list[Chunk] = []
+        self.reload()
+
+    def reload(self) -> int:
+        """Rebuild the in-memory retrieval index after a managed document changes."""
+        chunks = self._load_chunks()
+        with self._lock:
+            self.chunks = chunks
+        return len(chunks)
+
+    def document_chunk_counts(self) -> dict[str, int]:
+        with self._lock:
+            return dict(Counter(chunk.document for chunk in self.chunks))
 
     def _load_chunks(self) -> list[Chunk]:
         if not self.directory.exists():
@@ -51,6 +67,13 @@ class KnowledgeBase:
             if not text:
                 continue
             text, metadata = self._extract_front_matter(text)
+            if metadata.get("source_type") == "official_regulation":
+                try:
+                    extracted_chars = int(metadata.get("extracted_chars", "0") or "0")
+                except ValueError:
+                    extracted_chars = 0
+                if metadata.get("extraction_status") == "warning" or extracted_chars < 150:
+                    continue
             page_count = text.count("## Halaman ")
             empty_page_count = text.count(
                 "[Halaman tidak memiliki teks yang dapat diekstrak.]"
@@ -104,6 +127,7 @@ class KnowledgeBase:
                         content=content,
                         source_url=metadata.get("source_url"),
                         source_type=metadata.get("source_type"),
+                        validity_status=metadata.get("validity_status"),
                     )
                 )
             buffer.clear()
@@ -127,10 +151,12 @@ class KnowledgeBase:
         if not query_tokens:
             return []
 
+        with self._lock:
+            chunks = tuple(self.chunks)
         query_set = set(query_tokens)
         query_normalized = " ".join(query_tokens)
         results: list[SearchResult] = []
-        for chunk in self.chunks:
+        for chunk in chunks:
             chunk_tokens = tokenize(chunk.content + " " + chunk.section)
             if not chunk_tokens:
                 continue
@@ -159,6 +185,12 @@ class KnowledgeBase:
                 score *= 0.65
             if chunk.source_type == "official_html":
                 score *= 1.06
+            if chunk.source_type == "official_regulation":
+                status = (chunk.validity_status or "").casefold()
+                if "aktif" in status and "tidak" not in status:
+                    score *= 1.08
+                elif any(term in status for term in ("tidak aktif", "dicabut", "berlaku")):
+                    score *= 0.88
             score = min(1.0, score)
             results.append(SearchResult(chunk=chunk, score=round(score, 4)))
 

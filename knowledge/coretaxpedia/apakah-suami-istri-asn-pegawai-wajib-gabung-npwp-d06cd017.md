@@ -2,7 +2,7 @@
 title: "Apakah suami istri ASN/Pegawai wajib gabung NPWP"
 source_url: "https://www.pajak.go.id/coretaxpedia/apakah-suami-istri-asn-pegawai-wajib-gabung-npwp"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

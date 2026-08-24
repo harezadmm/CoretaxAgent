@@ -2,7 +2,7 @@
 title: "Daftar faktur dan SPT tidak sinkron"
 source_url: "https://www.pajak.go.id/coretaxpedia/daftar-faktur-dan-spt-tidak-sinkron"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

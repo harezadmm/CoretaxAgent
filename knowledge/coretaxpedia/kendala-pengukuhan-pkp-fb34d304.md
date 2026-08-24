@@ -2,7 +2,7 @@
 title: "Kendala pengukuhan PKP"
 source_url: "https://www.pajak.go.id/coretaxpedia/kendala-pengukuhan-pkp"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

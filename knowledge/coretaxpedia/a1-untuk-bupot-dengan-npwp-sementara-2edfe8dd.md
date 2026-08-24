@@ -2,7 +2,7 @@
 title: "A1 untuk bupot dengan NPWP sementara"
 source_url: "https://www.pajak.go.id/coretaxpedia/a1-untuk-bupot-dengan-npwp-sementara"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

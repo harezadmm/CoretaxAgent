@@ -9,8 +9,8 @@ Fondasi awal AI agent untuk membantu menjawab pertanyaan umum mengenai Coretax b
 - menyusun jawaban hanya dari konteks yang ditemukan;
 - menyertakan sumber dokumen;
 - mengeskalasi pertanyaan personal, transaksional, atau yang tidak memiliki sumber memadai;
-- menyediakan dashboard operator dengan Overview, Escalations, Knowledge Base, Analytics, Workflow, dan Settings;
-- menyediakan visualisasi workflow n8n Coretax Agent.
+- menyediakan dashboard operator dengan Overview, Escalations, Knowledge Base, Analytics, Virtual Office, dan Settings;
+- menyediakan Virtual Office: visualisasi pixel-art real-time lantai call center — meja agent AI menjawab panggilan, kasus yang tidak bisa dijawab diantar ke inbox eskalasi, dan petugas menindaklanjutinya pada jam kerja.
 
 Voice provider, eksekusi n8n nyata, penyimpanan session, dan data dashboard produksi masih berada pada roadmap P1. Dashboard saat ini merupakan UI operasional dengan sebagian data simulasi.
 
@@ -26,14 +26,15 @@ Voice provider, eksekusi n8n nyata, penyimpanan session, dan data dashboard prod
 
 ## Knowledge base resmi
 
-Snapshot awal diambil pada 21 Agustus 2026 dari situs resmi Direktorat Jenderal Pajak. Isinya mencakup:
+Snapshot diperbarui pada 24 Agustus 2026 dari situs resmi Direktorat Jenderal Pajak. Isinya mencakup:
 
 - 54 PDF panduan, manual, leaflet, dan materi Coretax;
 - 230 halaman FAQ Coretaxpedia;
-- 3.000+ potongan teks unik setelah deduplikasi;
-- manifest sumber berisi URL, hash file, ukuran, jumlah halaman, dan status ekstraksi.
+- 6.266 halaman detail regulasi resmi DJP dari katalog peraturan, termasuk PMK, PER, keputusan, dan regulasi historis;
+- 35.000+ potongan teks unik setelah deduplikasi;
+- manifest terpisah untuk corpus Coretax dan katalog regulasi, berisi URL, hash, tanggal, status hukum katalog, serta status ekstraksi.
 
-FAQ Coretaxpedia mendapat prioritas ringan dalam pencarian karena umumnya lebih baru daripada buku manual 2024. Jika jawaban tidak memiliki konteks yang memadai atau menyangkut tindakan personal/transaksional, agent melakukan eskalasi.
+FAQ Coretaxpedia mendapat prioritas ringan karena umumnya lebih baru daripada buku manual 2024. Regulasi yang berstatus aktif mendapat prioritas lebih tinggi daripada regulasi yang tidak aktif atau dicabut. Dokumen regulasi yang hanya berisi metadata ditandai `warning` dan tidak dimasukkan ke retrieval. Jika jawaban tidak memiliki konteks yang memadai atau menyangkut tindakan personal/transaksional, agent melakukan eskalasi.
 
 Struktur utama:
 
@@ -41,16 +42,58 @@ Struktur utama:
 knowledge/
 ├── coretaxpedia/          # Markdown FAQ terbaru untuk RAG
 ├── manuals/               # Hasil ekstraksi PDF untuk RAG
+├── curated/               # Routing intent, glosarium, troubleshooting, dan guardrails
 ├── source_files/          # Arsip PDF dan HTML resmi
-└── _meta/source-manifest.json
+└── _meta/                 # Manifest sumber dan curated layer
 ```
+
+Regulasi detail hasil sinkronisasi disimpan di `knowledge/regulations/` dan metadata katalog di `knowledge/_meta/regulations-manifest.json`.
 
 Untuk menyinkronkan ulang materi resmi:
 
 ```powershell
 python tools\sync_official_knowledge.py
+python tools\sync_official_regulations.py
 python tools\clean_extracted_text.py
 python tools\audit_knowledge.py
+```
+
+## Virtual Office
+
+View **Virtual Office** menggantikan diagram workflow n8n statis dengan visualisasi
+lantai call center yang berjalan real-time di browser. Delapan belas meja agent AI
+menerima panggilan, mendengarkan, mencari di knowledge base, lalu menjawab; pada
+puncak pagi sekitar 14 dari 18 meja terpakai bersamaan. Sekitar 7% panggilan tidak
+bisa diselesaikan AI; agent berdiri, mengantar kasusnya ke inbox eskalasi, dan kembali
+ke mejanya. Di luar jam kerja kasus menumpuk di inbox — enam petugas datang pukul
+08:00 pada hari kerja dan mengosongkannya.
+
+Jika view dibuka di luar jam kerja asli (malam atau akhir pekan), jam simulasi dimulai
+pada pukul 09:30 hari kerja berikutnya supaya kantor langsung terlihat ramai, bukan
+separuh mati. HUD menandainya dengan "jam simulasi · di luar jam kerja asli" agar
+jamnya tidak disalahartikan sebagai waktu sungguhan.
+
+Semua data bersifat simulasi di sisi klien (tidak ada endpoint baru). Kontrol kecepatan
+1×–300× ada di toolbar untuk mempercepat pergantian shift; klik meja mana pun untuk
+melihat panggilan atau kasus yang sedang ditangani; tombol **Edit layout** membuka palet
+sprite untuk menata ulang perabot dan lantai, tersimpan otomatis di `localStorage`.
+
+```text
+app/static/office/          # tilemap, simulasi, renderer, panel, editor (ES module, tanpa build step)
+app/static/assets/office/   # sprite pixel-art (lihat ATTRIBUTION.md — pixel-agents, MIT)
+tests/js/                   # test untuk logika murni tilemap + simulasi
+```
+
+Sinkronkan ulang sprite dan bangun ulang `catalog.json`:
+
+```powershell
+python tools\sync_office_assets.py
+```
+
+Jalankan test JavaScript (butuh Node 18+, tanpa dependensi tambahan):
+
+```powershell
+node --test "tests/js/*.test.js"
 ```
 
 ## Menjalankan proyek

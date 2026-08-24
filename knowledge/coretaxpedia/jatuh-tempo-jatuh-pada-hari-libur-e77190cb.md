@@ -2,7 +2,7 @@
 title: "Jatuh tempo jatuh pada hari libur"
 source_url: "https://www.pajak.go.id/coretaxpedia/jatuh-tempo-jatuh-pada-hari-libur"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

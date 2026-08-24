@@ -2,7 +2,7 @@
 title: "Mengamankan akses dengan verifikasi dua langkah"
 source_url: "https://www.pajak.go.id/coretaxpedia/mengamankan-akses-dengan-verifikasi-dua-langkah"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

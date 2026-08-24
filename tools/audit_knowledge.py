@@ -30,12 +30,26 @@ def main() -> None:
     knowledge_dir = project_root / "knowledge"
     manifest_path = knowledge_dir / "_meta" / "source-manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    records = manifest["records"]
+    base_records = manifest["records"]
+    regulations_manifest_path = knowledge_dir / "_meta" / "regulations-manifest.json"
+    if regulations_manifest_path.exists():
+        regulations_manifest = json.loads(
+            regulations_manifest_path.read_text(encoding="utf-8")
+        )
+    else:
+        regulations_manifest = {"records": []}
+    regulation_records = [
+        {"source_type": "official_regulation", **record}
+        for record in regulations_manifest.get("records", [])
+    ]
+    records = base_records + regulation_records
 
     status_counts = Counter(record["status"] for record in records)
     type_counts = Counter(record["source_type"] for record in records)
     hash_counts = Counter(
-        record["sha256"] for record in records if record.get("sha256")
+        record.get("sha256") or record.get("source_sha256")
+        for record in records
+        if record.get("sha256") or record.get("source_sha256")
     )
     duplicate_groups = sum(count > 1 for count in hash_counts.values())
     missing_files: list[str] = []
@@ -51,15 +65,16 @@ def main() -> None:
             if any(marker in text for marker in MOJIBAKE_MARKERS):
                 mojibake_files.append(rag_relative)
 
-    pdf_records = [
-        record for record in records if record["source_type"] == "official_pdf"
-    ]
+    pdf_records = [record for record in base_records if record["source_type"] == "official_pdf"]
     empty_pages = sum(record.get("empty_pages") or 0 for record in pdf_records)
     total_pages = sum(record.get("pages") or 0 for record in pdf_records)
 
     knowledge_base = KnowledgeBase(knowledge_dir)
 
-    print(f"Sumber: {len(records)}")
+    print(
+        f"Sumber resmi: {len(records)} "
+        f"(Coretax corpus: {len(base_records)}; regulasi DJP: {len(regulation_records)})"
+    )
     print(f"Jenis: {dict(type_counts)}")
     print(f"Status: {dict(status_counts)}")
     print(f"PDF pages: {total_pages}; empty extracted pages: {empty_pages}")

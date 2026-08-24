@@ -1,0 +1,80 @@
+---
+
+title: "TEMPAT PENDAFTARAN BAGI WAJIB PAJAK TERTENTU DAN ATAU TEMPAT PELAPORAN USAHA BAGI PENGUSAHA KENA PAJAK TERTENTU PADA KANTOR PELAYANAN PAJAK MADYA SEMARANG"
+source_url: "https://www.pajak.go.id/id/peraturan/tempat-pendaftaran-bagi-wajib-pajak-tertentu-dan-atau-tempat-pelaporan-usaha-bagi-3"
+publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
+published_at: "2008-03-25"
+retrieved_at: "2026-08-24"
+source_type: "official_regulation"
+document_number: "KEP-28/PJ/2008"
+document_type: "Keputusan Dirjen Pajak"
+validity_status: "Aktif"
+extraction_status: "ok"
+extracted_chars: 5381
+document_hash: "sha256:741ae355738f25c18c8e7b3eb68842e31208c66a50c16220f76a23db2dec1285"
+attachment_count: 0
+---
+# KEP-28/PJ/2008 — TEMPAT PENDAFTARAN BAGI WAJIB PAJAK TERTENTU DAN ATAU TEMPAT PELAPORAN USAHA BAGI PENGUSAHA KENA PAJAK TERTENTU PADA KANTOR PELAYANAN PAJAK MADYA SEMARANG
+
+## Metadata Peraturan
+
+- Jenis dokumen: Keputusan Dirjen Pajak
+- Nomor: KEP-28/PJ/2008
+- Tanggal peraturan: 2008-03-25
+- Status katalog DJP: Aktif
+- URL detail resmi: https://www.pajak.go.id/id/peraturan/tempat-pendaftaran-bagi-wajib-pajak-tertentu-dan-atau-tempat-pelaporan-usaha-bagi-3
+
+## Teks Peraturan
+
+Keputusan Dirjen Pajak
+
+KEP-28/PJ/2008
+
+Tanggal Peraturan
+
+25-03-2008
+
+| DEPARTEMEN KEUANGAN REPUBLIK INDONESI A DIREKTORAT JENDERAL PAJAK | | | | | | |
+| KEPUTUSAN DIREKTUR JENDERAL PAJAK NOMOR: KEP-28/PJ./2008 | | | | | | |
+| TENTANG | | | | | | |
+| ``` TEMPAT PENDAFTARAN BAGI WAJIB PAJAK TERTENTU DAN ATAU TEMPAT PELAPORAN USAHA BAGI PENGUSAHA KENA PAJAK TERTENTU PADA KANTOR PELAYANAN PAJAK MADYA SEMARANG ``` ``` ``` | | | | | | |
+| DIREKTUR JENDERAL PAJAK, | | | | | | |
+| Menimbang | : | a. | bahwa sehubungan dengan pembentukan instansi vertikal Direktorat Jenderal Pajak dengan sistem administrasi perpajakan modern yang disusun berdasarkan segmentasi Wajib Pajak, maka perlu dievaluasi Wajib Pajak yang terdaftar pada Kantor Pelayanan Pajak Madya Semarang; | | | |
+| | | b. | bahwa dalam rangka melaksanakan pasal 2 ayat (3) huruf a Undang-undang Nomor 6 TAHUN 1983 tentang Ketentuan Umum dan Tata Cara Perpajakan sebagaimana telah beberapa kali diubah terakhir dengan Undang-undang Nomor 28 TAHUN 2007, perlu menetapkan tempat pendaftaran bagi Wajib Pajak Tertentu dan atau tempat pelaporan usaha bagi Pengusaha Kena Pajak Tertentu; | | | |
+| | | c. | bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a dan huruf b, perlu menetapkan Keputusan Direktur Jenderal Pajak tentang Tempat Pendaftaran bagi Wajib Pajak Tertentu dan atau Tempat Pelaporan Usaha bagi Pengusaha Kena Pajak Tertentu pada Kantor Pelayanan Pajak Madya Semarang; | | | |
+| Mengingat | : | 1. | Undang-Undang Nomor 6 TAHUN 1983 tentang Ketentuan Umum dan Tata Cara Perpajakan (Lembaran Negara Republik Indonesia Tahun 1983 Nomor 49, Tambahan Lembaran Negara Republik Indonesia Nomor 3262) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 28 Tahun 2007 (Lembaran Negara Republik Indonesia Tahun 2007 Nomor 85, Tambahan Lembaran Negara Republik Indonesia Nomor 4740); | | | |
+| | | 2. | Undang-undang Nomor 7 TAHUN 1983 tentang Pajak Penghasilan (Lembaran Negara Republik Indonesia Tahun 1983 Nomor 50, Tambahan Lembaran Negara Republik Indonesia Nomor 3263) sebagaimana telah beberapa kali diubah terakhir dengan Undang-undang Nomor 17 TAHUN 2000 (Lembaran Negara Republik Indonesia Tahun 2000 Nomor 127, Tambahan Lembaran Negara Republik Indonesia Nomor 3985); | | | |
+| | | 3. | Undang-undang Nomor 8 TAHUN 1983 tentang Pajak Pertambahan Nilai Barang dan Jasa dan Pajak Penjualan atas Barang Mewah (Lembaran Negara Republik Indonesia Tahun 1983 Nomor 51, Tambahan Lembaran Negara Republik Indonesia Nomor 3264) sebagaimana telah beberapa kali diubah terakhir dengan Undang-undang Nomor 18 TAHUN 2000 (Lembaran Negara Republik Indonesia Tahun 2000 Nomor 128, Tambahan Lembaran Negara Republik Indonesia Nomor 3986); | | | |
+| | | 4. | Peraturan Menteri Keuangan Nomor 132/PMK.01/2006 tentang Organisasi dan Tata Kerja Instansi Vertikal Direktorat Jenderal Pajak sebagaimana telah diubah dengan Peraturan Menteri Keuangan Nomor 55/PMK.01/2007; | | | |
+| | | 5. | Keputusan Direktur Jenderal Pajak Nomor KEP-161/PJ./2001 tentang Jangka Waktu dan Pelaporan Kegiatan Usaha, Tata Cara Pendaftaran dan Penghapusan Nomor Pokok Wajib Pajak, serta Pengukuhan dan Pencabutan Pengukuhan Pengusaha Kena Pajak sebagaimana telah diubah dengan Peraturan Direktur Jenderal Pajak Nomor PER-160/PJ./2007; | | | |
+| | | 6. | Peraturan Direktur Jenderal Pajak Nomor PER-9/PJ./2008 tentang Tempat Pendaftaran Bagi Wajib Pajak Tertentu dan atau Tempat Pelaporan Usaha Bagi Pengusaha Kena Pajak Tertentu; | | | |
+| MEMUTUSKAN: | | | | | | |
+| Menetapkan | : | KEPUTUSAN DIREKTUR JENDERAL PAJAK TENTANG TEMPAT PENDAFTARAN BAGI WAJIB PAJAK TERTENTU DAN ATAU TEMPAT PELAPORAN USAHA BAGI PENGUSAHA KENA PAJAK TERTENTU PADA KANTOR PELAYANAN PAJAK MADYA SEMARANG. | | | | |
+| PERTAMA | : | Menetapkan Wajib Pajak dan atau Pengusaha Kena Pajak sebagaimana tercantum dalam Lampiran Keputusan Direktur Jenderal Pajak ini sebagai Wajib Pajak tertentu dan atau Pengusaha Kena Pajak tertentu yang terdaftar dan melaporkan usahanya pada Kantor Pelayanan Pajak (KPP) Madya Semarang. | | | | |
+| KEDUA | : | Pada saat Keputusan Direktur Jenderal Pajak ini berlaku, maka Keputusan Direktur Jenderal Pajak Nomor KEP - 26/PJ/2007 tentang Tempat Pendaftaran dan Pelaporan Usaha bagi Wajib Pajak tertentu pada Kantor Pelayanan Pajak Madya Semarang sebagaimana telah diubah terakhir dengan Keputusan Direktur Jenderal Pajak Nomor KEP-128/PJ/2007 dinyatakan tidak berlaku. | | | | |
+| KETIGA | : | Keputusan Direktur Jenderal Pajak ini mulai berlaku pada tanggal 7 April 2008. | | | | |
+| | | Salinan Keputusan Direktur Jenderal Pajak ini disampaikan kepada: | | | | |
+| | | 1. | Sekretaris Direktorat Jenderal Pajak; | | | |
+| | | 2. | Para Direktur/Tenaga Pengkaji/Kepala Kantor Wilayah Direktorat Jenderal Pajak; | | | |
+| | | 3. | Para Kepala KPP di lingkungan Kantor Wilayah Direktorat Jenderal Pajak Jawa Tengah I; | | | |
+| | | untuk diketahui dan digunakan sebagaimana mestinya. | | | | |
+| | | | | | | Ditetapkan di Jakarta |
+| | | | | | | pada tanggal 25 Maret 2008 |
+| | | | | | | Direktur Jenderal Pajak, |
+| | | | | | | ttd. |
+| | | | | | | DARMIN NASUTION |
+| | | | | | | NIP 130605098 |
+
+Status Peraturan
+
+Aktif
+
+Kategori Peraturan
+
+[KUP - Ketentuan Umum Perpajakan](/id/taxonomy/term/13927)
+
+Tag Peraturan
+
+[1001-KUP Umum](/id/taxonomy/term/13945)
+
+[1000-Semua KUP](/id/taxonomy/term/13944)

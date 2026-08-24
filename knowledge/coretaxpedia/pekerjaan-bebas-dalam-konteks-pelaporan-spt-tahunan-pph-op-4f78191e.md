@@ -2,7 +2,7 @@
 title: "Pekerjaan Bebas dalam konteks pelaporan SPT Tahunan PPh OP"
 source_url: "https://www.pajak.go.id/coretaxpedia/pekerjaan-bebas-dalam-konteks-pelaporan-spt-tahunan-pph-op"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

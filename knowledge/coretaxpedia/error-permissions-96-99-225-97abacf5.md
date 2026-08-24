@@ -2,7 +2,7 @@
 title: "Error permissions 96, 99, 225"
 source_url: "https://www.pajak.go.id/coretaxpedia/error-permissions-96-99-225"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

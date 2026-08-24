@@ -2,7 +2,7 @@
 title: "Step by step XML"
 source_url: "https://www.pajak.go.id/coretaxpedia/step-by-step-xml"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

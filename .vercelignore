@@ -1,6 +1,12 @@
+# Git history is 332MB and is never needed at runtime. Per-file uploads drop it
+# automatically, but `vercel deploy --archive=tgz` does not, which is why the
+# archive weighed 448MB against the 51MB the file-by-file path computed.
+.git/
 .venv/
 __pycache__/
 .pytest_cache/
+.claude/
+*.egg-info/
 work/
 tests/
 tools/

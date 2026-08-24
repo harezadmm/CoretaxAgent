@@ -2,7 +2,7 @@
 title: "Akun WP badan digunakan bersama"
 source_url: "https://www.pajak.go.id/coretaxpedia/akun-wp-badan-digunakan-bersama"
 publisher: "Direktorat Jenderal Pajak, Kementerian Keuangan RI"
-accessed_at: "2026-08-21"
+accessed_at: "2026-08-24"
 source_type: "official_html"
 ---
 

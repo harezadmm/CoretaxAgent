@@ -1,0 +1,98 @@
+{
+  "00-agent-grounding-and-safety.md": {
+    "mtime": 1787564080.6959753,
+    "seen": 1787564996.934018,
+    "ast_hash": "1d04cf00e89fb7a983a312232c34f837",
+    "semantic_hash": "1d04cf00e89fb7a983a312232c34f837"
+  },
+  "01-coretax-map-and-navigation.md": {
+    "mtime": 1787564080.69698,
+    "seen": 1787564996.934022,
+    "ast_hash": "f1416037fc5f1965e7757cee41eb7766",
+    "semantic_hash": "f1416037fc5f1965e7757cee41eb7766"
+  },
+  "02-access-activation-and-security.md": {
+    "mtime": 1787564080.6980011,
+    "seen": 1787564996.9340236,
+    "ast_hash": "9bb5b10a0787b6eba9c94a13e32b94d9",
+    "semantic_hash": "9bb5b10a0787b6eba9c94a13e32b94d9"
+  },
+  "03-code-authorization-and-digital-certificate.md": {
+    "mtime": 1787564080.699007,
+    "seen": 1787564996.9340243,
+    "ast_hash": "f0479071c5a3db2f6357b7836d34ef95",
+    "semantic_hash": "f0479071c5a3db2f6357b7836d34ef95"
+  },
+  "04-registration-identity-and-profile-data.md": {
+    "mtime": 1787564080.6995082,
+    "seen": 1787564996.9340255,
+    "ast_hash": "631f8a6b47294a5258d11433ae8437f3",
+    "semantic_hash": "631f8a6b47294a5258d11433ae8437f3"
+  },
+  "05-pic-role-and-impersonate.md": {
+    "mtime": 1787564080.7005062,
+    "seen": 1787564996.9340262,
+    "ast_hash": "11757c58175aa6c8c7b9a871b82af117",
+    "semantic_hash": "11757c58175aa6c8c7b9a871b82af117"
+  },
+  "06-billing-payment-and-deposit.md": {
+    "mtime": 1787564080.7010067,
+    "seen": 1787564996.934027,
+    "ast_hash": "a2826f1fefc550526dda7d76a3abaca1",
+    "semantic_hash": "a2826f1fefc550526dda7d76a3abaca1"
+  },
+  "07-bupot-and-withholding.md": {
+    "mtime": 1787564080.7015069,
+    "seen": 1787564996.9340274,
+    "ast_hash": "9e238e587b33f239e8154df9a7924fb9",
+    "semantic_hash": "9e238e587b33f239e8154df9a7924fb9"
+  },
+  "08-efaktur-and-input-tax.md": {
+    "mtime": 1787564080.702511,
+    "seen": 1787564996.9340284,
+    "ast_hash": "0555a7971f92c03c472353b06c523129",
+    "semantic_hash": "0555a7971f92c03c472353b06c523129"
+  },
+  "09-spt-reporting-and-statuses.md": {
+    "mtime": 1787564080.7030153,
+    "seen": 1787564996.934029,
+    "ast_hash": "bf302dbe5a6c93350480e4e52049fffd",
+    "semantic_hash": "bf302dbe5a6c93350480e4e52049fffd"
+  },
+  "10-administrative-services-and-complaints.md": {
+    "mtime": 1787564080.7035165,
+    "seen": 1787564996.9340296,
+    "ast_hash": "d2aff176ed42639ce7c6ef0f52e168d3",
+    "semantic_hash": "d2aff176ed42639ce7c6ef0f52e168d3"
+  },
+  "11-troubleshooting-playbook.md": {
+    "mtime": 1787564080.7045183,
+    "seen": 1787564996.9340305,
+    "ast_hash": "8d838fa7ece6078324e6a423c0644be6",
+    "semantic_hash": "8d838fa7ece6078324e6a423c0644be6"
+  },
+  "12-real-task-intent-catalog.md": {
+    "mtime": 1787564080.7055163,
+    "seen": 1787564996.934031,
+    "ast_hash": "719c3a9c552b4e886ea0a7138334ae17",
+    "semantic_hash": "719c3a9c552b4e886ea0a7138334ae17"
+  },
+  "13-source-priority-and-update-policy.md": {
+    "mtime": 1787564080.7055163,
+    "seen": 1787564996.9340317,
+    "ast_hash": "697c98b1ae52a0dfc479a099ee242601",
+    "semantic_hash": "697c98b1ae52a0dfc479a099ee242601"
+  },
+  "14-real-task-evaluation-scenarios.md": {
+    "mtime": 1787564080.7070262,
+    "seen": 1787564996.9340324,
+    "ast_hash": "bc7bb9d1855bcdb91a459ee9d2d1a56f",
+    "semantic_hash": "bc7bb9d1855bcdb91a459ee9d2d1a56f"
+  },
+  "15-coretax-terminology-glossary.md": {
+    "mtime": 1787564080.7070262,
+    "seen": 1787564996.9340332,
+    "ast_hash": "e85d75f14dcd93ca50cade5f68735d8a",
+    "semantic_hash": "e85d75f14dcd93ca50cade5f68735d8a"
+  }
+}
