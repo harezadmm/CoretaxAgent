@@ -210,6 +210,9 @@ class RagGraph {
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.animationStart = performance.now();
     this.pulse = 0;
+    // Fresh data relaxes from scratch; resuming after a hidden tab or a drag
+    // must not reset the cooling, so only setData seeds this.
+    this.alpha = 1;
     this.geometryVersion += 1;
     this.edgeCacheKey = null;
     if (this.reducedMotion) this.settle();
@@ -222,6 +225,43 @@ class RagGraph {
     for (let step = 0; step < 220; step += 1) this.tick(1 - step / 260);
     this.updateExtent();
     this.geometryVersion += 1;
+  }
+
+  start() {
+    if (this.frame) cancelAnimationFrame(this.frame);
+    if (this.reducedMotion) {
+      this.render();
+      this.frame = null;
+      return;
+    }
+
+    const step = (now) => {
+      // Cooling relaxation: the graph visibly finds its own shape, then holds
+      // still so the edge cache can stop rebuilding.
+      if (this.alpha > 0.02) {
+        this.tick(this.alpha);
+        this.alpha *= 0.988;
+        this.updateExtent();
+        this.geometryVersion += 1;
+      }
+      this.pulse = ((now - this.animationStart) % PULSE_PERIOD) / PULSE_PERIOD;
+      this.render();
+      this.frame = this.awake() ? requestAnimationFrame(step) : null;
+    };
+
+    this.frame = requestAnimationFrame(step);
+  }
+
+  /** Idle motion is not worth a frame when nobody can see the canvas. */
+  awake() {
+    return !document.hidden && this.onScreen !== false;
+  }
+
+  resume() {
+    if (!this.frame && !this.reducedMotion && this.nodes.length && this.awake()) {
+      this.animationStart = performance.now();
+      this.start();
+    }
   }
 
   /**

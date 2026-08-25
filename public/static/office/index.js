@@ -264,7 +264,9 @@ export async function mountOffice(host, { onStatus } = {}) {
         const next = !editor.active;
         editor.setActive(next);
         button.classList.toggle('active', next);
-        button.textContent = next ? '✓ Selesai edit' : '✎ Edit layout';
+        button.textContent = next ? '✓' : '✎';
+        button.title = next ? 'Selesai edit' : 'Edit layout';
+        button.setAttribute('aria-label', button.title);
         canvas.style.cursor = next ? 'crosshair' : 'grab';
         break;
       }

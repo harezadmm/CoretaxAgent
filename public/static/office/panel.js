@@ -80,7 +80,7 @@ export function officeMarkup() {
               <button data-action="zoom-in" aria-label="Perbesar">＋</button>
               <button data-action="fit">Fit</button>
             </span>
-            <button class="outline-button" data-action="toggle-edit">✎ Edit layout</button>
+            <button class="outline-button icon-only" data-action="toggle-edit" title="Edit layout" aria-label="Edit layout">✎</button>
           </div>
         </div>
 
