@@ -409,10 +409,9 @@ class RagGraph {
     let bestScore = -1;
     const slack = 5 / this.transform.scale;
     for (const node of this.nodes) {
-      const size = this.nodeRadius(node) * (0.3 + node.near * 0.5);
-      // The glow is painted at 3.2x the dot, so that is the target as far as
-      // the reader is concerned; anything tighter reads as a dead click.
-      const radius = size * 2.6 + slack;
+      const size = this.nodeRadius(node) * (0.5 + node.near * 0.7);
+      // Track the drawn dot, with enough margin that a near miss still counts.
+      const radius = size * 1.8 + slack;
       const distance = Math.hypot(point.x - node.sx, point.y - node.sy);
       if (distance > radius) continue;
       // Balance "in front of everything else" against "actually under the
@@ -566,8 +565,8 @@ class RagGraph {
     // Core glow, so the middle of the orb reads as dense rather than merely
     // crowded.
     const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-    glow.addColorStop(0, 'rgba(126,205,235,0.26)');
-    glow.addColorStop(0.55, 'rgba(96,150,205,0.09)');
+    glow.addColorStop(0, 'rgba(126,205,235,0.07)');
+    glow.addColorStop(0.55, 'rgba(96,150,205,0.03)');
     glow.addColorStop(1, 'rgba(96,150,205,0)');
     ctx.fillStyle = glow;
     ctx.beginPath();
@@ -626,32 +625,26 @@ class RagGraph {
       const key = `${colour}|${band}`;
       let group = groups.get(key);
       if (!group) {
-        group = { path: new Path2D(), halo: new Path2D(), colour, band };
+        group = { path: new Path2D(), colour, band };
         groups.set(key, group);
       }
-      const size = this.nodeRadius(node) * (0.3 + node.near * 0.5);
+      // Bigger and solid rather than small and haloed: without bloom to carry
+      // it, the dot itself has to be the thing you see and aim at.
+      const size = this.nodeRadius(node) * (0.5 + node.near * 0.7);
       group.path.moveTo(node.sx + size, node.sy);
       group.path.arc(node.sx, node.sy, size, 0, Math.PI * 2);
-      // A wide, faint disc under each dot. Additive blending turns overlapping
-      // haloes into the bloom the design asks for, which shadowBlur could not
-      // give us at six thousand dots a frame.
-      const halo = size * 3.2;
-      group.halo.moveTo(node.sx + halo, node.sy);
-      group.halo.arc(node.sx, node.sy, halo, 0, Math.PI * 2);
     }
 
     ctx.shadowBlur = 0;
-    ctx.globalCompositeOperation = 'lighter';
     const ordered = [...groups.values()].sort((a, b) => a.band - b.band);
     for (const group of ordered) {
       const depth = (group.band + 0.5) / BANDS;
+      // Opaque, drawn back to front. 'lighter' was what turned overlapping dots
+      // into bloom in the first place.
+      ctx.globalAlpha = selected ? 0.22 : 0.62 + depth * 0.38;
       ctx.fillStyle = group.colour;
-      ctx.globalAlpha = (selected ? 0.02 : 0.05) + depth * 0.07;
-      ctx.fill(group.halo);
-      ctx.globalAlpha = selected ? 0.2 : 0.32 + depth * 0.62;
       ctx.fill(group.path);
     }
-    ctx.globalCompositeOperation = 'source-over';
 
     for (const node of standouts) {
       const isSelected = node.id === selected;
