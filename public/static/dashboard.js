@@ -10,6 +10,36 @@ function notify(message) {
 const screenStage = document.querySelector('#screen-stage');
 const overviewView = document.querySelector('#overview');
 
+// Display scale. The dashboard is drawn in fixed pixel sizes, so growing the
+// text alone would break every layout that depends on them; zooming the shell
+// scales type and geometry together instead.
+const SCALE_STORAGE_KEY = 'coretax.displayScale';
+const SCALE_MIN = 75;
+const SCALE_MAX = 200;
+
+function readDisplayScale() {
+  const stored = Number(window.localStorage.getItem(SCALE_STORAGE_KEY));
+  if (!Number.isFinite(stored) || stored <= 0) return 100;
+  return Math.min(SCALE_MAX, Math.max(SCALE_MIN, Math.round(stored)));
+}
+
+function applyDisplayScale(percent, { persist = true } = {}) {
+  const value = Math.min(SCALE_MAX, Math.max(SCALE_MIN, Math.round(percent)));
+  document.documentElement.style.setProperty('--ui-scale', String(value / 100));
+  if (persist) window.localStorage.setItem(SCALE_STORAGE_KEY, String(value));
+  document.querySelectorAll('[data-scale-readout]').forEach((el) => { el.textContent = `${value}%`; });
+  document.querySelectorAll('[data-scale-slider]').forEach((el) => { el.value = String(value); });
+  // Media queries see the unzoomed viewport, so scaling up on a narrow screen
+  // can push the desktop layout wider than the window. Let it scroll rather
+  // than be clipped by the overflow-x:hidden that guards the normal case.
+  document.body.style.overflowX = value > 100 ? 'auto' : '';
+  // Canvases size themselves from their box, which zoom has just changed.
+  window.dispatchEvent(new Event('resize'));
+  return value;
+}
+
+applyDisplayScale(readDisplayScale(), { persist: false });
+
 function stopDotPlotAnimation(plot = document.querySelector('.dot-plot')) {
   if (!plot || !plot._waveFrame) return;
   cancelAnimationFrame(plot._waveFrame);
@@ -53,7 +83,7 @@ const screenTemplates = {
     <div class="analytics-grid"><article class="table-panel analytics-chart"><div class="table-panel-head"><div><p class="panel-kicker">QUESTION VOLUME</p><h3>Topics over time</h3></div><span class="muted-label">7 DAYS · 1,284 CALLS</span></div><div class="mini-bars"><i style="height:43%"></i><i style="height:58%"></i><i style="height:48%"></i><i style="height:76%"></i><i style="height:66%"></i><i style="height:93%"></i><i style="height:81%"></i><i style="height:100%"></i><i style="height:87%"></i><i style="height:72%"></i><i style="height:90%"></i><i style="height:61%"></i></div><div class="mini-axis"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div></article><article class="table-panel"><div class="table-panel-head"><div><p class="panel-kicker">TOP INTENTS</p><h3>What users ask</h3></div></div><ol class="rank-list"><li><span>01</span><strong>Aktivasi akun</strong><b>32%</b></li><li><span>02</span><strong>Kode otorisasi</strong><b>24%</b></li><li><span>03</span><strong>Kode billing</strong><b>18%</b></li><li><span>04</span><strong>Pelaporan SPT</strong><b>14%</b></li><li><span>05</span><strong>Login Coretax</strong><b>12%</b></li></ol></article></div>`,
   office: officeShell,
   settings: () => `${screenHeader('SYSTEM CONFIGURATION', 'Settings', 'Atur perilaku agent, routing eskalasi, dan koneksi operasional.', '<button class="primary-button" data-action="save-settings">Save changes</button>')}
-    <div class="settings-grid"><article class="table-panel settings-panel"><div class="table-panel-head"><div><p class="panel-kicker">AI AGENT</p><h3>Response policy</h3></div><span class="status-pill live-pill">● CONFIGURED</span></div><label class="setting-row"><span><strong>Use official sources only</strong><small>AI menolak jawaban di luar knowledge base.</small></span><input type="checkbox" checked /></label><label class="setting-row"><span><strong>Escalate personal questions</strong><small>Data personal selalu diteruskan ke petugas.</small></span><input type="checkbox" checked /></label><label class="setting-row"><span><strong>Record transcript</strong><small>Simpan transkrip untuk audit dan evaluasi.</small></span><input type="checkbox" checked /></label></article><article class="table-panel settings-panel"><div class="table-panel-head"><div><p class="panel-kicker">OPERATIONS</p><h3>Routing & notifications</h3></div></div><label class="field-label">Escalation team<select><option>Coretax Support Desk</option><option>Taxpayer Service</option></select></label><label class="field-label">Priority threshold<select><option>Personal or transactional</option><option>Low confidence only</option></select></label><label class="field-label">Notification channel<select><option>Dashboard + Email</option><option>Dashboard only</option></select></label></article></div>`,
+    <div class="settings-grid"><article class="table-panel settings-panel display-scale-panel"><div class="table-panel-head"><div><p class="panel-kicker">TAMPILAN</p><h3>Skala tampilan</h3></div><span class="status-pill live-pill" data-scale-readout>100%</span></div><p class="subtle">Memperbesar tata letak dan teks sekaligus. Tersimpan di peramban ini.</p><input class="scale-slider" type="range" min="${SCALE_MIN}" max="${SCALE_MAX}" step="5" value="${readDisplayScale()}" data-scale-slider aria-label="Skala tampilan" /><div class="scale-ticks"><span>${SCALE_MIN}%</span><span>100%</span><span>${SCALE_MAX}%</span></div><div class="scale-presets">${[90, 100, 125, 150, 175].map((value) => `<button data-scale-preset="${value}">${value}%</button>`).join('')}</div></article><article class="table-panel settings-panel"><div class="table-panel-head"><div><p class="panel-kicker">AI AGENT</p><h3>Response policy</h3></div><span class="status-pill live-pill">● CONFIGURED</span></div><label class="setting-row"><span><strong>Use official sources only</strong><small>AI menolak jawaban di luar knowledge base.</small></span><input type="checkbox" checked /></label><label class="setting-row"><span><strong>Escalate personal questions</strong><small>Data personal selalu diteruskan ke petugas.</small></span><input type="checkbox" checked /></label><label class="setting-row"><span><strong>Record transcript</strong><small>Simpan transkrip untuk audit dan evaluasi.</small></span><input type="checkbox" checked /></label></article><article class="table-panel settings-panel"><div class="table-panel-head"><div><p class="panel-kicker">OPERATIONS</p><h3>Routing & notifications</h3></div></div><label class="field-label">Escalation team<select><option>Coretax Support Desk</option><option>Taxpayer Service</option></select></label><label class="field-label">Priority threshold<select><option>Personal or transactional</option><option>Low confidence only</option></select></label><label class="field-label">Notification channel<select><option>Dashboard + Email</option><option>Dashboard only</option></select></label></article></div>`,
 };
 
 /**
@@ -185,6 +215,17 @@ screenStage.addEventListener('click', (event) => {
     'save-settings': 'Pengaturan tersimpan.',
   };
   notify(messages[button.dataset.action] || 'Aksi dijalankan.');
+});
+
+screenStage.addEventListener('input', (event) => {
+  const slider = event.target.closest('[data-scale-slider]');
+  if (slider) applyDisplayScale(Number(slider.value));
+});
+
+screenStage.addEventListener('click', (event) => {
+  const preset = event.target.closest('[data-scale-preset]');
+  if (!preset) return;
+  notify(`Skala tampilan ${applyDisplayScale(Number(preset.dataset.scalePreset))}%.`);
 });
 
 document.querySelectorAll('[data-view-target]').forEach((button) => {

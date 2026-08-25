@@ -41,12 +41,7 @@ const TOPIC_COLOR = '#8b93b8';
 // The disc is squashed vertically because the canvas is far wider than it is
 // tall; every placement and every hit test goes through this same factor.
 const FLATTEN = 0.75;
-const ENTRY_MS = 900;
 const PULSE_PERIOD = 5200;
-
-function clamp01(value) {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
 
 function withAlpha(hex, alpha) {
   const int = parseInt(hex.slice(1), 16);
@@ -202,15 +197,16 @@ class RagGraph {
       ...node,
       x: 0,
       y: 0,
-      angle: 0,
+      vx: 0,
+      vy: 0,
+      clusterX: 0,
+      clusterY: 0,
       orbit: 0,
-      delay: 0,
-      phase: 0,
       pinned: false,
     }));
     this.edges = payload.edges;
     this.nodeMap = new Map(this.nodes.map((node) => [node.id, node]));
-    this.layoutRadialSectors();
+    this.layoutOrganicClusters();
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.animationStart = performance.now();
     this.pulse = 0;
@@ -221,37 +217,23 @@ class RagGraph {
     this.start();
   }
 
-  /** Drop every node straight onto its target, skipping the entry animation. */
+  /** Relax the whole graph at once, for readers who opted out of motion. */
   settle() {
-    for (const node of this.nodes) {
-      node.x = Math.cos(node.angle) * node.orbit;
-      node.y = Math.sin(node.angle) * node.orbit * FLATTEN;
-    }
+    for (let step = 0; step < 220; step += 1) this.tick(1 - step / 260);
+    this.updateExtent();
+    this.geometryVersion += 1;
   }
 
   /**
-   * Give every source type its own angular wedge and fill that wedge with
-   * concentric arcs of documents.
+   * Seed organic clusters, one per source type.
    *
-   * The previous layout scattered each document at a hashed angle and radius
-   * around its source, so four overlapping clouds merged into one featureless
-   * disc no amount of settling could separate. Placing arcs directly makes the
-   * grouping legible and guarantees the spacing instead of hoping for it.
+   * An earlier version packed documents into strict concentric arcs. It was
+   * tidy but mechanical, and it read as a fan rather than a memory graph, so
+   * placement is now a rough disc per cluster that the simulation relaxes into
+   * its own shape.
    */
-  layoutRadialSectors() {
-    const SOURCE_ORBIT = 150;
-    const DOC_ORBIT = 250;
-    // The largest document dot has a radius of 5.7px, so neighbours need to be
-    // more than 11.4px apart before they touch.
-    const RING_STEP = 19;
-    const ARC_SPACING = 17;
-    const SECTOR_GAP = 0.1;
-
-    const root = this.nodeMap.get('rag-root');
-    if (root) {
-      root.angle = 0;
-      root.orbit = 0;
-    }
+  layoutOrganicClusters() {
+    const SPACING = 14;
 
     const byType = new Map();
     for (const node of this.nodes) {
@@ -261,144 +243,173 @@ class RagGraph {
       byType.get(key).push(node);
     }
 
-    // Square-root weighting keeps a 16-document wedge readable next to a
-    // 400-document one while still showing which is larger.
-    const order = [...byType.entries()]
-      .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
-    const weights = order.map(([, docs]) => Math.sqrt(docs.length));
-    const weightTotal = weights.reduce((sum, weight) => sum + weight, 0) || 1;
-    const usable = Math.PI * 2 - SECTOR_GAP * Math.max(1, order.length);
+    // A disc holding n dots at SPACING apart has radius ~sqrt(n/pi)*SPACING.
+    const clusters = [...byType.entries()]
+      .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
+      .map(([type, docs]) => ({ type, docs, radius: Math.sqrt(docs.length / Math.PI) * SPACING + 40 }));
+
+    // Largest cluster takes the middle; the rest ring it just far enough out to
+    // clear both radii, which keeps the groups legible without a rigid grid.
+    const placed = [];
+    clusters.forEach((cluster, index) => {
+      if (index === 0) {
+        cluster.cx = 0;
+        cluster.cy = 0;
+      } else {
+        const golden = index * 2.399963;
+        // The vertical squash below shortens the real gap, so pad for it here.
+        const distance = (clusters[0].radius + cluster.radius + 130) * 1.22;
+        cluster.cx = Math.cos(golden) * distance;
+        cluster.cy = Math.sin(golden) * distance * 0.82;
+      }
+      placed.push(cluster);
+    });
 
     const sourceByType = new Map(
       this.nodes.filter((node) => node.kind === 'source').map((node) => [node.source_type, node]),
     );
 
-    let cursor = -Math.PI / 2;
-    let outerOrbit = DOC_ORBIT;
-
-    order.forEach(([type, docs], index) => {
-      const sweep = (weights[index] / weightTotal) * usable;
-      const source = sourceByType.get(type);
+    for (const cluster of placed) {
+      const source = sourceByType.get(cluster.type);
       if (source) {
-        source.angle = cursor + sweep / 2;
-        source.orbit = SOURCE_ORBIT;
+        source.x = cluster.cx;
+        source.y = cluster.cy;
+        source.clusterX = cluster.cx;
+        source.clusterY = cluster.cy;
       }
-
-      const sorted = [...docs].sort((a, b) => String(a.label).localeCompare(String(b.label)));
-      let placed = 0;
-      let orbit = DOC_ORBIT;
-      while (placed < sorted.length) {
-        const capacity = Math.max(1, Math.floor((sweep * orbit) / ARC_SPACING));
-        const take = Math.min(capacity, sorted.length - placed);
-        for (let offset = 0; offset < take; offset += 1) {
-          const ratio = take === 1 ? 0.5 : offset / (take - 1);
-          const node = sorted[placed + offset];
-          node.angle = cursor + sweep * (0.06 + 0.88 * ratio);
-          node.orbit = orbit;
-        }
-        placed += take;
-        outerOrbit = Math.max(outerOrbit, orbit);
-        orbit += RING_STEP;
-      }
-
-      cursor += sweep + SECTOR_GAP;
-    });
-
-    this.layoutTopics(outerOrbit + 62);
-    this.maxOrbit = outerOrbit + 62;
-
-    for (const node of this.nodes) {
-      node.delay = node.orbit * 0.9;
-      node.phase = ((hashNumber(node.id) % 1000) / 1000) * Math.PI * 2;
+      cluster.docs.forEach((node, index) => {
+        // Sunflower placement spaces a disc evenly by construction. The jitter
+        // is deliberately tiny: scaling the radius by a hash, as an earlier
+        // version did, destroyed that spacing and left dots 0.2px apart.
+        const hash = hashNumber(node.id);
+        const t = (index + 0.5) / cluster.docs.length;
+        const angle = index * 2.399963;
+        const radius = Math.sqrt(t) * cluster.radius;
+        // Jitter in pixels, not radians. An angular wobble of the same nominal
+        // size throws points 36px sideways at the rim and lands them on top of
+        // their neighbours, which is what the seed spacing was losing to.
+        node.x = cluster.cx + Math.cos(angle) * radius + ((hash % 40) / 10 - 2);
+        node.y = cluster.cy + Math.sin(angle) * radius * 0.92 + (((hash >>> 7) % 40) / 10 - 2);
+        node.clusterX = cluster.cx;
+        node.clusterY = cluster.cy;
+      });
     }
+
+    this.seedTopics();
+    this.updateExtent();
   }
 
-  /**
-   * Park each topic outside the documents, near the circular mean of the ones
-   * it links, so its edges stay short instead of raking across the whole disc.
-   */
-  layoutTopics(orbit) {
+  /** Drop each topic onto the centre of mass of the documents it links. */
+  seedTopics() {
     const means = new Map();
     for (const edge of this.edges) {
       if (edge.kind !== 'topic') continue;
-      const sourceNode = this.nodeMap.get(edge.source);
-      const targetNode = this.nodeMap.get(edge.target);
-      if (!sourceNode || !targetNode) continue;
-      const topic = sourceNode.kind === 'topic' ? sourceNode : targetNode;
-      const other = topic === sourceNode ? targetNode : sourceNode;
+      const a = this.nodeMap.get(edge.source);
+      const b = this.nodeMap.get(edge.target);
+      if (!a || !b) continue;
+      const topic = a.kind === 'topic' ? a : b;
+      const other = topic === a ? b : a;
       if (topic.kind !== 'topic' || other.kind !== 'document') continue;
-      if (!means.has(topic.id)) means.set(topic.id, { sin: 0, cos: 0 });
+      if (!means.has(topic.id)) means.set(topic.id, { x: 0, y: 0, n: 0 });
       const mean = means.get(topic.id);
-      mean.sin += Math.sin(other.angle);
-      mean.cos += Math.cos(other.angle);
+      mean.x += other.x;
+      mean.y += other.y;
+      mean.n += 1;
     }
-
-    const topics = this.nodes.filter((node) => node.kind === 'topic');
-    const spread = topics.map((node, index) => {
+    for (const node of this.nodes) {
+      if (node.kind !== 'topic') continue;
       const mean = means.get(node.id);
-      const angle = mean && (mean.sin || mean.cos)
-        ? Math.atan2(mean.sin, mean.cos)
-        : ((Math.PI * 2) / Math.max(1, topics.length)) * index;
-      return { node, angle: (angle + Math.PI * 2) % (Math.PI * 2) };
-    }).sort((a, b) => a.angle - b.angle);
-
-    // Topics that share a neighbourhood would otherwise stack on one another.
-    const minGap = (Math.PI * 2) / Math.max(1, spread.length) * 0.7;
-    spread.forEach((entry, index) => {
-      if (index > 0) {
-        const previous = spread[index - 1].angle;
-        if (entry.angle - previous < minGap) entry.angle = previous + minGap;
+      const hash = hashNumber(node.id);
+      if (mean && mean.n) {
+        node.x = mean.x / mean.n + ((hash % 80) - 40);
+        node.y = mean.y / mean.n + (((hash >>> 8) % 80) - 40);
+      } else {
+        node.x = ((hash % 600) - 300);
+        node.y = (((hash >>> 8) % 600) - 300);
       }
-      entry.node.angle = entry.angle;
-      entry.node.orbit = orbit;
-    });
+      node.clusterX = node.x;
+      node.clusterY = node.y;
+    }
   }
 
-  start() {
-    if (this.frame) cancelAnimationFrame(this.frame);
-    if (this.reducedMotion) {
-      this.settle();
-      this.render();
-      this.frame = null;
-      return;
+  updateExtent() {
+    let maxOrbit = 1;
+    for (const node of this.nodes) {
+      node.orbit = Math.hypot(node.x, node.y);
+      if (node.orbit > maxOrbit) maxOrbit = node.orbit;
+    }
+    this.maxOrbit = maxOrbit;
+  }
+
+  /**
+   * One relaxation tick: springs along the contains-edges, short-range
+   * repulsion so dots never pile up, and a weak pull towards the node's own
+   * cluster. Repulsion goes through a spatial hash, so the cost stays linear
+   * even with the whole corpus on screen.
+   */
+  tick(alpha) {
+    const CELL = 15;
+    const SPAN = 1 << 16;
+    const buckets = new Map();
+    for (const node of this.nodes) {
+      // Numeric keys: building 6.5k template strings per tick, then nine more
+      // lookups each, was most of the frame budget.
+      const key = (Math.round(node.x / CELL) + SPAN) * (SPAN * 2) + (Math.round(node.y / CELL) + SPAN);
+      let bucket = buckets.get(key);
+      if (!bucket) { bucket = []; buckets.set(key, bucket); }
+      bucket.push(node);
     }
 
-    // Breathing keeps every node moving, which means the edge geometry can never
-    // be cached. That is a fine trade for a few hundred nodes and a bad one for
-    // fifteen thousand edges, so the whole corpus settles still instead.
-    const breathes = this.nodes.length <= TOPIC_EDGE_BUDGET;
+    // Only the root-to-source links behave like springs. Pulling every document
+    // to a fixed distance from its source cannot be satisfied by thousands of
+    // them at once, and the attempt crushed the cluster into a dense ring.
+    for (const edge of this.edges) {
+      if (edge.kind === 'topic') continue;
+      const a = this.nodeMap.get(edge.source);
+      const b = this.nodeMap.get(edge.target);
+      if (!a || !b || a.kind !== 'root' || b.kind !== 'source') continue;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const distance = Math.hypot(dx, dy) || 0.01;
+      const force = ((distance - 300) / distance) * 0.02 * alpha;
+      b.vx -= dx * force;
+      b.vy -= dy * force;
+    }
 
-    const step = (now) => {
-      const elapsed = now - this.animationStart;
-      let moving = false;
-      for (const node of this.nodes) {
-        if (node.pinned) continue;
-        const entry = 1 - (1 - clamp01((elapsed - node.delay) / ENTRY_MS)) ** 3;
-        if (entry < 1) moving = true;
-        const breath = breathes ? Math.sin(elapsed * 0.0006 + node.phase) * 1.6 * entry : 0;
-        const orbit = (node.orbit + breath) * entry;
-        node.x = Math.cos(node.angle) * orbit;
-        node.y = Math.sin(node.angle) * orbit * FLATTEN;
+    for (const node of this.nodes) {
+      if (node.pinned || node.kind === 'root') continue;
+      const cx = Math.round(node.x / CELL);
+      const cy = Math.round(node.y / CELL);
+      for (let ox = -1; ox <= 1; ox += 1) {
+        for (let oy = -1; oy <= 1; oy += 1) {
+          const bucket = buckets.get((cx + ox + SPAN) * (SPAN * 2) + (cy + oy + SPAN));
+          if (!bucket) continue;
+          for (let index = 0; index < bucket.length; index += 1) {
+            const other = bucket[index];
+            if (other === node) continue;
+            const dx = node.x - other.x;
+            const dy = node.y - other.y;
+            const sq = dx * dx + dy * dy;
+            if (sq > CELL * CELL || sq === 0) continue;
+            const distance = Math.sqrt(sq);
+            const push = ((CELL - distance) / distance) * 0.28 * alpha;
+            node.vx += dx * push;
+            node.vy += dy * push;
+          }
+        }
       }
-      if (breathes || moving) this.geometryVersion += 1;
-      this.pulse = (elapsed % PULSE_PERIOD) / PULSE_PERIOD;
-      this.render();
-      this.frame = this.awake() ? requestAnimationFrame(step) : null;
-    };
+      // Just enough gravity to stop a cluster drifting; the seed already sizes
+      // it, so anything stronger only compresses what repulsion spread out.
+      node.vx += (node.clusterX - node.x) * 0.0004 * alpha;
+      node.vy += (node.clusterY - node.y) * 0.0004 * alpha;
+    }
 
-    this.frame = requestAnimationFrame(step);
-  }
-
-  /** Idle motion is not worth a frame when nobody can see the canvas. */
-  awake() {
-    return !document.hidden && this.onScreen !== false;
-  }
-
-  resume() {
-    if (!this.frame && !this.reducedMotion && this.nodes.length && this.awake()) {
-      // Rebase the clock so a backgrounded tab does not replay the entry.
-      this.animationStart = performance.now() - ENTRY_MS - this.maxOrbit;
-      this.start();
+    for (const node of this.nodes) {
+      if (node.pinned || node.kind === 'root') { node.vx = 0; node.vy = 0; continue; }
+      node.vx *= 0.82;
+      node.vy *= 0.82;
+      node.x += Math.max(-9, Math.min(9, node.vx));
+      node.y += Math.max(-9, Math.min(9, node.vy));
     }
   }
 
@@ -470,6 +481,9 @@ class RagGraph {
       this.pointer.node.x = point.x;
       this.pointer.node.y = point.y;
       this.geometryVersion += 1;
+      // Let the neighbours give way instead of staying frozen around the drag.
+      this.alpha = Math.max(this.alpha || 0, 0.3);
+      if (!this.frame) this.resume();
     }
     this.render();
   }
@@ -482,11 +496,10 @@ class RagGraph {
       this.onSelect(node.document_id);
     }
     if (node) {
-      // Adopt wherever the node was dropped as its new orbit, so releasing it
-      // does not snap it back across the canvas.
+      // Anchor it where it was dropped so it is not dragged back by its cluster.
       if (moved) {
-        node.angle = Math.atan2(node.y / FLATTEN, node.x);
-        node.orbit = Math.hypot(node.x, node.y / FLATTEN);
+        node.clusterX = node.x;
+        node.clusterY = node.y;
       }
       node.pinned = false;
     }
@@ -525,10 +538,8 @@ class RagGraph {
 
   fit() {
     if (!this.nodes.length || !this.viewport) return;
-    // Frame the settled layout, not the in-flight entry animation, or the view
-    // would be fitted to a cluster of nodes still stacked at the centre.
-    const xs = this.nodes.map((node) => Math.cos(node.angle) * node.orbit);
-    const ys = this.nodes.map((node) => Math.sin(node.angle) * node.orbit * FLATTEN);
+    const xs = this.nodes.map((node) => node.x);
+    const ys = this.nodes.map((node) => node.y);
     const minX = Math.min(...xs) - 55;
     const maxX = Math.max(...xs) + 55;
     const minY = Math.min(...ys) - 55;

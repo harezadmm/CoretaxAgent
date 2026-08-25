@@ -97,9 +97,11 @@
 .rag-workspace{
   display:grid;
   grid-template-columns:minmax(0,1fr) 354px;
-  /* Follow the viewport so a tall screen actually gets a taller canvas; the
-     graph now draws the whole corpus and wants every pixel it can have. */
-  min-height:clamp(680px,76vh,1180px);
+  /* Fill exactly what is left below the header stack so the workspace never
+     needs scrolling to be seen whole. Viewport units ignore the zoom applied
+     for --ui-scale, so divide it back out. */
+  height:calc((100vh - 372px) / var(--ui-scale,1));
+  min-height:430px;
   border:1px solid #273139;
   border-radius:9px;
   overflow:hidden;
