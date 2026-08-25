@@ -10,7 +10,7 @@
     {
       "src": "/static/(.*)",
       "headers": {
-        "cache-control": "public, max-age=600, stale-while-revalidate=86400"
+        "cache-control": "public, max-age=0, must-revalidate"
       },
       "continue": true
     },
