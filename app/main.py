@@ -106,7 +106,12 @@ def require_knowledge_access(
             detail="RAG Management dinonaktifkan. Konfigurasikan RAG_ADMIN_TOKEN.",
         )
     expected = settings.rag_admin_token or ""
-    if not admin_token or not secrets.compare_digest(admin_token, expected):
+    # compare_digest() rejects str arguments holding non-ASCII characters with
+    # a TypeError, which surfaces as a 500 instead of the 401 the caller earned.
+    # Comparing the UTF-8 bytes keeps the timing guarantee without that trap.
+    if not admin_token or not secrets.compare_digest(
+        admin_token.encode("utf-8"), expected.encode("utf-8")
+    ):
         raise HTTPException(status_code=401, detail="Token RAG Management tidak valid.")
 
 

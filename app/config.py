@@ -20,6 +20,17 @@ class Settings:
     rag_admin_token: str | None = None
 
 
+def _clean_secret(name: str) -> str | None:
+    """Read a secret, dropping the stray BOM and padding tooling likes to add.
+
+    Piping a value into `vercel env add` from a Windows shell can prepend a
+    UTF-8 BOM, which then travels all the way into the comparison and breaks
+    it, so normalise the value at the edge instead.
+    """
+    value = os.getenv(name) or ""
+    return value.lstrip("﻿").strip() or None
+
+
 def get_settings() -> Settings:
     project_root = Path(__file__).resolve().parents[1]
     knowledge_value = os.getenv("KNOWLEDGE_DIR", "knowledge")
@@ -33,5 +44,5 @@ def get_settings() -> Settings:
         knowledge_dir=knowledge_dir,
         min_retrieval_score=float(os.getenv("MIN_RETRIEVAL_SCORE", "0.12")),
         max_context_docs=int(os.getenv("MAX_CONTEXT_DOCS", "4")),
-        rag_admin_token=os.getenv("RAG_ADMIN_TOKEN") or None,
+        rag_admin_token=_clean_secret("RAG_ADMIN_TOKEN"),
     )
