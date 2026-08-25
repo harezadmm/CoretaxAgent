@@ -97,7 +97,9 @@
 .rag-workspace{
   display:grid;
   grid-template-columns:minmax(0,1fr) 354px;
-  min-height:680px;
+  /* Follow the viewport so a tall screen actually gets a taller canvas; the
+     graph now draws the whole corpus and wants every pixel it can have. */
+  min-height:clamp(680px,76vh,1180px);
   border:1px solid #273139;
   border-radius:9px;
   overflow:hidden;
@@ -107,7 +109,7 @@
 
 .rag-graph-panel{
   display:grid;
-  grid-template-rows:auto minmax(560px,1fr) auto;
+  grid-template-rows:auto minmax(0,1fr) auto;
   min-width:0;
   background:#080b0e;
 }

@@ -1,5 +1,11 @@
 const TOKEN_STORAGE_KEY = 'coretax.ragAdminToken';
-const GRAPH_LIMIT = 700;
+// Every document, not a sample. The renderer batches its draw calls so the full
+// corpus stays interactive; see render().
+const GRAPH_LIMIT = 20000;
+
+// Past this many nodes the topic mesh is noise rather than information, so it
+// only appears for whatever is selected.
+const TOPIC_EDGE_BUDGET = 1500;
 
 const SOURCE_LABELS = {
   official_regulation: 'Regulasi DJP',
@@ -40,6 +46,11 @@ const PULSE_PERIOD = 5200;
 
 function clamp01(value) {
   return value < 0 ? 0 : value > 1 ? 1 : value;
+}
+
+function withAlpha(hex, alpha) {
+  const int = parseInt(hex.slice(1), 16);
+  return `rgba(${(int >> 16) & 255},${(int >> 8) & 255},${int & 255},${alpha})`;
 }
 
 const STATUS_LABELS = {
@@ -130,6 +141,9 @@ class RagGraph {
     this.maxOrbit = 0;
     this.reducedMotion = false;
     this.onScreen = true;
+    this.geometryVersion = 0;
+    this.edgeCacheKey = null;
+    this.edgeLanes = [];
     this.transform = { x: 0, y: 0, scale: 1 };
     this.pointer = null;
     this.controller = new AbortController();
@@ -200,6 +214,8 @@ class RagGraph {
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.animationStart = performance.now();
     this.pulse = 0;
+    this.geometryVersion += 1;
+    this.edgeCacheKey = null;
     if (this.reducedMotion) this.settle();
     this.fit();
     this.start();
@@ -347,17 +363,24 @@ class RagGraph {
       return;
     }
 
+    // Breathing keeps every node moving, which means the edge geometry can never
+    // be cached. That is a fine trade for a few hundred nodes and a bad one for
+    // fifteen thousand edges, so the whole corpus settles still instead.
+    const breathes = this.nodes.length <= TOPIC_EDGE_BUDGET;
+
     const step = (now) => {
       const elapsed = now - this.animationStart;
+      let moving = false;
       for (const node of this.nodes) {
         if (node.pinned) continue;
-        // Bloom out of the centre, then breathe gently in place forever.
         const entry = 1 - (1 - clamp01((elapsed - node.delay) / ENTRY_MS)) ** 3;
-        const breath = Math.sin(elapsed * 0.0006 + node.phase) * 1.6 * entry;
+        if (entry < 1) moving = true;
+        const breath = breathes ? Math.sin(elapsed * 0.0006 + node.phase) * 1.6 * entry : 0;
         const orbit = (node.orbit + breath) * entry;
         node.x = Math.cos(node.angle) * orbit;
         node.y = Math.sin(node.angle) * orbit * FLATTEN;
       }
+      if (breathes || moving) this.geometryVersion += 1;
       this.pulse = (elapsed % PULSE_PERIOD) / PULSE_PERIOD;
       this.render();
       this.frame = this.awake() ? requestAnimationFrame(step) : null;
@@ -446,6 +469,7 @@ class RagGraph {
     } else if (this.pointer.node) {
       this.pointer.node.x = point.x;
       this.pointer.node.y = point.y;
+      this.geometryVersion += 1;
     }
     this.render();
   }
@@ -549,29 +573,72 @@ class RagGraph {
       }
     }
 
-    for (const edge of this.edges) {
-      const source = this.nodeMap.get(edge.source);
-      const target = this.nodeMap.get(edge.target);
-      if (!source || !target) continue;
-      const linked = connected.has(source.id) && connected.has(target.id);
-      const highlighted = !selected || linked;
-      const isTopic = edge.kind === 'topic';
-      // Topic links jump between wedges, so 681 straight chords would rebuild
-      // the hairball. Bowing them towards the centre keeps them readable and
-      // holds them well clear of the document arcs.
-      const alpha = isTopic
-        ? (selected && linked ? 0.3 : highlighted ? 0.05 : 0.015)
-        : (highlighted ? 0.16 : 0.025);
-      ctx.beginPath();
-      ctx.moveTo(source.x, source.y);
-      if (isTopic) {
-        ctx.quadraticCurveTo((source.x + target.x) * 0.22, (source.y + target.y) * 0.22, target.x, target.y);
-      } else {
-        ctx.lineTo(target.x, target.y);
+    // Every edge sharing a stroke style is collected into one Path2D and drawn
+    // with a single stroke(). At full corpus that turns 15k canvas calls per
+    // frame into four, which is the difference between animating and crawling.
+    // Edge geometry only moves while nodes move, so rebuild it when the layout
+    // or the selection actually changes rather than once per frame.
+    const edgeKey = `${this.geometryVersion}|${selected || ''}`;
+    if (this.edgeCacheKey !== edgeKey) {
+      // Each source fans an edge to every one of its documents, so the ink piles
+      // up with the corpus. Left fixed, 6.5k overlapping strokes swamp the dots;
+      // hold the total roughly constant instead.
+      const ink = Math.min(0.16, Math.max(0.03, (0.16 * 1200) / Math.max(1, this.nodes.length)));
+      const laneMap = new Map();
+      const laneFor = (style, thick) => {
+        const key = `${style}|${thick}`;
+        let lane = laneMap.get(key);
+        if (!lane) {
+          lane = { path: new Path2D(), style, thick };
+          laneMap.set(key, lane);
+        }
+        return lane;
+      };
+      // The topic mesh is 9k chords at full corpus — noise, not information.
+      // Above the budget it is reserved for whatever the reader selected.
+      const showEveryTopicEdge = this.nodes.length <= TOPIC_EDGE_BUDGET;
+
+      for (const edge of this.edges) {
+        const source = this.nodeMap.get(edge.source);
+        const target = this.nodeMap.get(edge.target);
+        if (!source || !target) continue;
+        const linked = Boolean(selected) && connected.has(source.id) && connected.has(target.id);
+        const isTopic = edge.kind === 'topic';
+        if (isTopic && !showEveryTopicEdge && !linked) continue;
+
+        const bright = !selected || linked;
+        let lane;
+        if (isTopic) {
+          lane = laneFor(linked ? 'rgba(139,147,184,0.3)' : 'rgba(139,147,184,0.05)', linked);
+        } else {
+          // Carry the source's own hue. A single cyan for every fan repainted
+          // the smaller wedges in the largest category's colour.
+          const base = source.kind === 'source'
+            ? SOURCE_COLORS[source.source_type] || '#7f8c95'
+            : '#53d9e5';
+          lane = laneFor(withAlpha(base, bright ? ink : ink * 0.16), bright);
+        }
+        lane.path.moveTo(source.x, source.y);
+        if (isTopic) {
+          // Bow topic links towards the centre; straight chords would rake
+          // across the document arcs and rebuild the hairball.
+          lane.path.quadraticCurveTo((source.x + target.x) * 0.22, (source.y + target.y) * 0.22, target.x, target.y);
+        } else {
+          lane.path.lineTo(target.x, target.y);
+        }
       }
-      ctx.strokeStyle = isTopic ? `rgba(139,147,184,${alpha})` : `rgba(83,217,229,${alpha})`;
-      ctx.lineWidth = (highlighted ? 0.75 : 0.35) / this.transform.scale ** 0.25;
-      ctx.stroke();
+
+      this.edgeLanes = [...laneMap.values()];
+      this.edgeCacheKey = edgeKey;
+    }
+
+    // Line width tracks zoom, so it is applied at draw time, not bake time.
+    const thin = 0.35 / this.transform.scale ** 0.25;
+    const thick = 0.75 / this.transform.scale ** 0.25;
+    for (const lane of this.edgeLanes || []) {
+      ctx.strokeStyle = lane.style;
+      ctx.lineWidth = lane.thick ? thick : thin;
+      ctx.stroke(lane.path);
     }
 
     // A slow ring sweeping outwards from the root, brightening the nodes it
@@ -585,18 +652,56 @@ class RagGraph {
       ctx.stroke();
     }
 
+    const colorOf = (node) => (node.kind === 'topic'
+      ? TOPIC_COLOR
+      : node.kind === 'root'
+        ? '#ffffff'
+        : SOURCE_COLORS[node.source_type] || '#7f8c95');
+    const radiusOf = (node) => {
+      // Swell briefly as the pulse ring passes over this orbit.
+      const wake = pulseOrbit > 0 ? Math.max(0, 1 - Math.abs(node.orbit - pulseOrbit) / 44) : 0;
+      return { radius: this.nodeRadius(node) * (1 + wake * 0.3), wake };
+    };
+
+    // Plain dots are grouped by fill and opacity so the bulk of the corpus costs
+    // one fill() per group. Anything that needs a glow, a ring or a label is
+    // rare enough to draw on its own afterwards.
+    const groups = new Map();
+    const standouts = [];
     for (const node of this.nodes) {
-      const color = node.kind === 'topic'
-        ? TOPIC_COLOR
-        : node.kind === 'root'
-          ? '#ffffff'
-          : SOURCE_COLORS[node.source_type] || '#7f8c95';
+      const isSelected = node.id === selected;
+      const isHovered = node.id === this.hoveredNodeId;
+      const ringed = node.status === 'warning' || node.status === 'review' || node.editable;
+      if (isSelected || isHovered || ringed || node.kind !== 'document') {
+        standouts.push(node);
+        continue;
+      }
+      const color = colorOf(node);
+      const alpha = selected && !connected.has(node.id) ? 0.18 : node.status === 'repealed' ? 0.42 : 0.92;
+      const key = `${color}|${alpha}`;
+      let group = groups.get(key);
+      if (!group) {
+        group = { path: new Path2D(), color, alpha };
+        groups.set(key, group);
+      }
+      const { radius } = radiusOf(node);
+      group.path.moveTo(node.x + radius, node.y);
+      group.path.arc(node.x, node.y, radius, 0, Math.PI * 2);
+    }
+
+    ctx.shadowBlur = 0;
+    for (const group of groups.values()) {
+      ctx.globalAlpha = group.alpha;
+      ctx.fillStyle = group.color;
+      ctx.fill(group.path);
+    }
+
+    for (const node of standouts) {
+      const color = colorOf(node);
       const isSelected = node.id === selected;
       const isHovered = node.id === this.hoveredNodeId;
       const dimmed = selected && !connected.has(node.id);
-      // Swell briefly as the pulse ring passes over this orbit.
-      const wake = pulseOrbit > 0 ? Math.max(0, 1 - Math.abs(node.orbit - pulseOrbit) / 44) : 0;
-      const radius = this.nodeRadius(node) * (1 + wake * 0.3);
+      const { radius, wake } = radiusOf(node);
       ctx.globalAlpha = dimmed ? 0.18 : node.status === 'repealed' ? 0.42 : 0.92;
       if (isSelected || isHovered || node.kind === 'root' || wake > 0.05) {
         ctx.shadowColor = color;
@@ -619,7 +724,7 @@ class RagGraph {
         ctx.stroke();
       }
       ctx.shadowBlur = 0;
-      const showLabel = node.kind !== 'document' || isSelected || isHovered || (this.nodes.length < 120 && this.transform.scale > 0.8);
+      const showLabel = node.kind !== 'document' || isSelected || isHovered;
       if (showLabel) {
         const label = node.label.length > 54 ? `${node.label.slice(0, 51)}…` : node.label;
         ctx.font = `${node.kind === 'root' ? 700 : 500} ${node.kind === 'document' ? 8 : 9}px Cascadia Mono, Consolas, monospace`;

@@ -165,7 +165,7 @@ def knowledge_graph(
     q: Annotated[str, Query(max_length=200)] = "",
     source_type: Annotated[str | None, Query(max_length=64)] = None,
     status_filter: Annotated[str | None, Query(alias="status", max_length=32)] = None,
-    limit: Annotated[int, Query(ge=100, le=1_000)] = 700,
+    limit: Annotated[int, Query(ge=100, le=20_000)] = 700,
 ) -> KnowledgeGraphResponse:
     return knowledge_manager.graph(
         query=q,
