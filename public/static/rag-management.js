@@ -382,11 +382,18 @@ class RagGraph {
 
   worldFromPointer(event) {
     const rect = this.canvas.getBoundingClientRect();
+    // clientX and the rect are visual pixels, but the canvas transform is in
+    // layout pixels. Under the display-scale zoom those differ, and the error
+    // grows with distance from the origin — the far side of the orb becomes
+    // unclickable. Dividing by the measured ratio removes it.
+    const zoom = this.canvas.offsetWidth ? rect.width / this.canvas.offsetWidth : 1;
+    const localX = (event.clientX - rect.left) / zoom;
+    const localY = (event.clientY - rect.top) / zoom;
     return {
-      x: (event.clientX - rect.left - this.transform.x) / this.transform.scale,
-      y: (event.clientY - rect.top - this.transform.y) / this.transform.scale,
-      screenX: event.clientX - rect.left,
-      screenY: event.clientY - rect.top,
+      x: (localX - this.transform.x) / this.transform.scale,
+      y: (localY - this.transform.y) / this.transform.scale,
+      screenX: localX,
+      screenY: localY,
     };
   }
 
@@ -399,14 +406,21 @@ class RagGraph {
 
   hitTest(point) {
     let best = null;
-    let bestNear = -1;
+    let bestScore = -1;
+    const slack = 5 / this.transform.scale;
     for (const node of this.nodes) {
-      const radius = this.nodeRadius(node) * (0.3 + node.near * 0.5) + 7 / this.transform.scale;
-      if (Math.hypot(point.x - node.sx, point.y - node.sy) > radius) continue;
-      // Dots overlap constantly once projected, so the one nearest the viewer
-      // is the one the reader means.
-      if (node.near > bestNear) {
-        bestNear = node.near;
+      const size = this.nodeRadius(node) * (0.3 + node.near * 0.5);
+      // The glow is painted at 3.2x the dot, so that is the target as far as
+      // the reader is concerned; anything tighter reads as a dead click.
+      const radius = size * 2.6 + slack;
+      const distance = Math.hypot(point.x - node.sx, point.y - node.sy);
+      if (distance > radius) continue;
+      // Balance "in front of everything else" against "actually under the
+      // cursor": depth alone let a near node win from the edge of its halo
+      // while a dot dead under the pointer lost.
+      const score = node.near * 0.55 + (1 - distance / radius) * 0.45;
+      if (score > bestScore) {
+        bestScore = score;
         best = node;
       }
     }
