@@ -35,6 +35,8 @@ const SOURCE_COLORS = {
 const TOPIC_COLOR = '#8b93b8';
 
 const PULSE_PERIOD = 5200;
+// Radians per second: about 17 degrees, so a full turn takes roughly 21s.
+const ROTATION_RATE = 0.3;
 
 const STATUS_LABELS = {
   active: 'Aktif',
@@ -341,11 +343,17 @@ class RagGraph {
       return;
     }
 
+    this.lastFrame = performance.now();
     const step = (now) => {
       const elapsed = now - this.animationStart;
+      // Advance by elapsed time, not by frame: a per-frame step runs twice as
+      // fast on a 120Hz panel. 0.0017rad/frame worked out at one revolution per
+      // minute, which reads as a still image.
+      const delta = Math.min(0.05, (now - this.lastFrame) / 1000);
+      this.lastFrame = now;
       // Hold still while the reader is dragging, so their rotation is the only
       // motion they have to track.
-      if (!this.pointer) this.yaw += 0.0017;
+      if (!this.pointer) this.yaw += ROTATION_RATE * delta;
       this.project();
       this.pulse = (elapsed % PULSE_PERIOD) / PULSE_PERIOD;
       this.render();
@@ -416,6 +424,13 @@ class RagGraph {
   }
 
   pointerMove(event) {
+    // A pointerup swallowed by the browser would leave this.pointer set, and
+    // the idle rotation checks it — the orb would then sit frozen forever with
+    // nothing on screen to explain why.
+    if (this.pointer && event.buttons === 0) {
+      this.pointer = null;
+      this.resume();
+    }
     const point = this.worldFromPointer(event);
     if (!this.pointer) {
       const hovered = this.hitTest(point)?.id || null;
@@ -529,8 +544,8 @@ class RagGraph {
     // Core glow, so the middle of the orb reads as dense rather than merely
     // crowded.
     const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-    glow.addColorStop(0, 'rgba(126,205,235,0.20)');
-    glow.addColorStop(0.55, 'rgba(96,150,205,0.06)');
+    glow.addColorStop(0, 'rgba(126,205,235,0.26)');
+    glow.addColorStop(0.55, 'rgba(96,150,205,0.09)');
     glow.addColorStop(1, 'rgba(96,150,205,0)');
     ctx.fillStyle = glow;
     ctx.beginPath();
@@ -589,12 +604,18 @@ class RagGraph {
       const key = `${colour}|${band}`;
       let group = groups.get(key);
       if (!group) {
-        group = { path: new Path2D(), colour, band, repealed: 0 };
+        group = { path: new Path2D(), halo: new Path2D(), colour, band };
         groups.set(key, group);
       }
       const size = this.nodeRadius(node) * (0.3 + node.near * 0.5);
       group.path.moveTo(node.sx + size, node.sy);
       group.path.arc(node.sx, node.sy, size, 0, Math.PI * 2);
+      // A wide, faint disc under each dot. Additive blending turns overlapping
+      // haloes into the bloom the design asks for, which shadowBlur could not
+      // give us at six thousand dots a frame.
+      const halo = size * 3.2;
+      group.halo.moveTo(node.sx + halo, node.sy);
+      group.halo.arc(node.sx, node.sy, halo, 0, Math.PI * 2);
     }
 
     ctx.shadowBlur = 0;
@@ -602,8 +623,10 @@ class RagGraph {
     const ordered = [...groups.values()].sort((a, b) => a.band - b.band);
     for (const group of ordered) {
       const depth = (group.band + 0.5) / BANDS;
-      ctx.globalAlpha = selected ? 0.16 : 0.22 + depth * 0.5;
       ctx.fillStyle = group.colour;
+      ctx.globalAlpha = (selected ? 0.02 : 0.05) + depth * 0.07;
+      ctx.fill(group.halo);
+      ctx.globalAlpha = selected ? 0.2 : 0.32 + depth * 0.62;
       ctx.fill(group.path);
     }
     ctx.globalCompositeOperation = 'source-over';
