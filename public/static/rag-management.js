@@ -156,6 +156,7 @@ class RagGraph {
       }
     }, { signal });
     this.canvas.addEventListener('wheel', (event) => this.zoomAt(event), { signal, passive: false });
+    this.canvas.addEventListener('contextmenu', (event) => event.preventDefault(), { signal });
     this.canvas.addEventListener('dblclick', () => this.fit(), { signal });
     this.canvas.addEventListener('keydown', (event) => {
       if (event.key === '+' || event.key === '=') this.zoom(1.2);
@@ -380,6 +381,12 @@ class RagGraph {
     }
   }
 
+  /** Ratio between visual and layout pixels under the display-scale zoom. */
+  zoomFactor() {
+    const rect = this.canvas.getBoundingClientRect();
+    return this.canvas.offsetWidth ? rect.width / this.canvas.offsetWidth : 1;
+  }
+
   worldFromPointer(event) {
     const rect = this.canvas.getBoundingClientRect();
     // clientX and the rect are visual pixels, but the canvas transform is in
@@ -429,15 +436,20 @@ class RagGraph {
   pointerDown(event) {
     const point = this.worldFromPointer(event);
     const node = this.hitTest(point);
+    // Shift, the right button or the middle button pan the view; a plain drag
+    // turns the orb. Panning used to be unreachable — every drag rotated.
+    const panning = event.shiftKey || event.button === 1 || event.button === 2;
     this.pointer = {
       id: event.pointerId,
-      node,
+      node: panning ? null : node,
+      mode: panning ? 'pan' : 'rotate',
       startX: event.clientX,
       startY: event.clientY,
       lastX: event.clientX,
       lastY: event.clientY,
       moved: false,
     };
+    this.canvas.style.cursor = panning ? 'grabbing' : 'grab';
     this.canvas.setPointerCapture(event.pointerId);
   }
 
@@ -471,11 +483,18 @@ class RagGraph {
       this.pointer.moved = true;
     }
 
-    // Nodes are fixed to the sphere, so a drag turns the whole orb rather than
-    // pulling one dot out of it.
-    this.yaw += dx * 0.006;
-    this.pitch = Math.max(-1.25, Math.min(1.25, this.pitch + dy * 0.006));
-    this.project();
+    const zoom = this.zoomFactor();
+    if (this.pointer.mode === 'pan') {
+      // Deltas arrive in visual pixels; the transform is in layout pixels.
+      this.transform.x += dx / zoom;
+      this.transform.y += dy / zoom;
+    } else {
+      // Nodes are fixed to the sphere, so a plain drag turns the whole orb
+      // rather than pulling one dot out of it.
+      this.yaw += (dx / zoom) * 0.006;
+      this.pitch = Math.max(-1.25, Math.min(1.25, this.pitch + (dy / zoom) * 0.006));
+      this.project();
+    }
     this.render();
   }
 
@@ -487,6 +506,7 @@ class RagGraph {
       this.onSelect(node.document_id);
     }
     this.pointer = null;
+    this.canvas.style.cursor = this.hoveredNodeId ? 'pointer' : 'grab';
     if (this.canvas.hasPointerCapture(event.pointerId)) this.canvas.releasePointerCapture(event.pointerId);
     this.resume();
     this.render();
@@ -742,7 +762,7 @@ function shellMarkup(capabilities) {
           </div>
           <div class="rag-legend"><span><i class="legend-official"></i>Resmi</span><span><i class="legend-curated"></i>Curated</span><span><i class="legend-managed"></i>Operator</span><span><i class="legend-topic"></i>Topik</span></div>
         </div>
-        <footer class="rag-graph-footer"><span data-rag-graph-summary>Menyiapkan data…</span><span>Drag · zoom · klik node untuk detail</span></footer>
+        <footer class="rag-graph-footer"><span data-rag-graph-summary>Menyiapkan data…</span><span>Drag putar · Shift atau klik kanan geser · scroll zoom · klik node untuk detail</span></footer>
       </section>
       <aside class="rag-manager" aria-label="Panel pengelolaan memory">
         <div class="rag-manager-head"><div><p class="panel-kicker">MEMORY LIBRARY</p><h3>Manage knowledge</h3></div><button type="button" data-rag-action="add" aria-label="Tambah memory">＋</button></div>
