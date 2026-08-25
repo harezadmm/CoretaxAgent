@@ -13,17 +13,34 @@ const SOURCE_LABELS = {
   knowledge_document: 'Dokumen knowledge',
 };
 
+// Categorical hues only. #ffb248 and #ff78b7 are reserved for the warning and
+// editable rings, so no source type may claim them or a document's category
+// becomes indistinguishable from its status.
 const SOURCE_COLORS = {
   official_regulation: '#53d9e5',
   official_html: '#46d7a6',
   official_pdf: '#a590ff',
-  curated: '#ffb248',
-  curated_official_synthesis: '#ffb248',
-  operator_note: '#ff78b7',
+  curated: '#f5de70',
+  curated_official_synthesis: '#f5de70',
+  operator_note: '#ff9ad5',
   internal_procedure: '#78a8ff',
-  faq: '#f5de70',
+  faq: '#c2b280',
   knowledge_document: '#8d9aa4',
 };
+
+// Topics are structure rather than a category, so they stay neutral and leave
+// the violet to official_pdf.
+const TOPIC_COLOR = '#8b93b8';
+
+// The disc is squashed vertically because the canvas is far wider than it is
+// tall; every placement and every hit test goes through this same factor.
+const FLATTEN = 0.75;
+const ENTRY_MS = 900;
+const PULSE_PERIOD = 5200;
+
+function clamp01(value) {
+  return value < 0 ? 0 : value > 1 ? 1 : value;
+}
 
 const STATUS_LABELS = {
   active: 'Aktif',
@@ -109,7 +126,10 @@ class RagGraph {
     this.selectedNodeId = null;
     this.hoveredNodeId = null;
     this.frame = null;
-    this.simulationFrames = 0;
+    this.pulse = 0;
+    this.maxOrbit = 0;
+    this.reducedMotion = false;
+    this.onScreen = true;
     this.transform = { x: 0, y: 0, scale: 1 };
     this.pointer = null;
     this.controller = new AbortController();
@@ -138,6 +158,15 @@ class RagGraph {
       if (event.key === '-') this.zoom(0.84);
       if (event.key === '0') this.fit();
     }, { signal });
+
+    // The idle animation runs forever, so give it back to the machine whenever
+    // the canvas is off screen or the tab is in the background.
+    document.addEventListener('visibilitychange', () => this.resume(), { signal });
+    this.intersectionObserver = new IntersectionObserver((entries) => {
+      this.onScreen = entries.some((entry) => entry.isIntersecting);
+      this.resume();
+    });
+    this.intersectionObserver.observe(this.canvas);
   }
 
   resize() {
@@ -159,118 +188,194 @@ class RagGraph {
       ...node,
       x: 0,
       y: 0,
-      vx: 0,
-      vy: 0,
-      fixed: node.kind === 'root' || node.kind === 'source',
+      angle: 0,
+      orbit: 0,
+      delay: 0,
+      phase: 0,
+      pinned: false,
     }));
     this.edges = payload.edges;
     this.nodeMap = new Map(this.nodes.map((node) => [node.id, node]));
-    this.layoutInitialPositions();
-    this.simulationFrames = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 150;
+    this.layoutRadialSectors();
+    this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.animationStart = performance.now();
+    this.pulse = 0;
+    if (this.reducedMotion) this.settle();
     this.fit();
     this.start();
   }
 
-  layoutInitialPositions() {
+  /** Drop every node straight onto its target, skipping the entry animation. */
+  settle() {
+    for (const node of this.nodes) {
+      node.x = Math.cos(node.angle) * node.orbit;
+      node.y = Math.sin(node.angle) * node.orbit * FLATTEN;
+    }
+  }
+
+  /**
+   * Give every source type its own angular wedge and fill that wedge with
+   * concentric arcs of documents.
+   *
+   * The previous layout scattered each document at a hashed angle and radius
+   * around its source, so four overlapping clouds merged into one featureless
+   * disc no amount of settling could separate. Placing arcs directly makes the
+   * grouping legible and guarantees the spacing instead of hoping for it.
+   */
+  layoutRadialSectors() {
+    const SOURCE_ORBIT = 150;
+    const DOC_ORBIT = 250;
+    // The largest document dot has a radius of 5.7px, so neighbours need to be
+    // more than 11.4px apart before they touch.
+    const RING_STEP = 19;
+    const ARC_SPACING = 17;
+    const SECTOR_GAP = 0.1;
+
     const root = this.nodeMap.get('rag-root');
     if (root) {
-      root.x = 0;
-      root.y = 0;
+      root.angle = 0;
+      root.orbit = 0;
     }
-    const sources = this.nodes.filter((node) => node.kind === 'source');
-    sources.forEach((node, index) => {
-      const angle = ((Math.PI * 2) / Math.max(1, sources.length)) * index - Math.PI / 2;
-      node.x = Math.cos(angle) * 285;
-      node.y = Math.sin(angle) * 235;
+
+    const byType = new Map();
+    for (const node of this.nodes) {
+      if (node.kind !== 'document') continue;
+      const key = node.source_type || 'unknown';
+      if (!byType.has(key)) byType.set(key, []);
+      byType.get(key).push(node);
+    }
+
+    // Square-root weighting keeps a 16-document wedge readable next to a
+    // 400-document one while still showing which is larger.
+    const order = [...byType.entries()]
+      .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+    const weights = order.map(([, docs]) => Math.sqrt(docs.length));
+    const weightTotal = weights.reduce((sum, weight) => sum + weight, 0) || 1;
+    const usable = Math.PI * 2 - SECTOR_GAP * Math.max(1, order.length);
+
+    const sourceByType = new Map(
+      this.nodes.filter((node) => node.kind === 'source').map((node) => [node.source_type, node]),
+    );
+
+    let cursor = -Math.PI / 2;
+    let outerOrbit = DOC_ORBIT;
+
+    order.forEach(([type, docs], index) => {
+      const sweep = (weights[index] / weightTotal) * usable;
+      const source = sourceByType.get(type);
+      if (source) {
+        source.angle = cursor + sweep / 2;
+        source.orbit = SOURCE_ORBIT;
+      }
+
+      const sorted = [...docs].sort((a, b) => String(a.label).localeCompare(String(b.label)));
+      let placed = 0;
+      let orbit = DOC_ORBIT;
+      while (placed < sorted.length) {
+        const capacity = Math.max(1, Math.floor((sweep * orbit) / ARC_SPACING));
+        const take = Math.min(capacity, sorted.length - placed);
+        for (let offset = 0; offset < take; offset += 1) {
+          const ratio = take === 1 ? 0.5 : offset / (take - 1);
+          const node = sorted[placed + offset];
+          node.angle = cursor + sweep * (0.06 + 0.88 * ratio);
+          node.orbit = orbit;
+        }
+        placed += take;
+        outerOrbit = Math.max(outerOrbit, orbit);
+        orbit += RING_STEP;
+      }
+
+      cursor += sweep + SECTOR_GAP;
     });
-    const sourceIndex = new Map(sources.map((node) => [node.source_type, node]));
+
+    this.layoutTopics(outerOrbit + 62);
+    this.maxOrbit = outerOrbit + 62;
+
+    for (const node of this.nodes) {
+      node.delay = node.orbit * 0.9;
+      node.phase = ((hashNumber(node.id) % 1000) / 1000) * Math.PI * 2;
+    }
+  }
+
+  /**
+   * Park each topic outside the documents, near the circular mean of the ones
+   * it links, so its edges stay short instead of raking across the whole disc.
+   */
+  layoutTopics(orbit) {
+    const means = new Map();
+    for (const edge of this.edges) {
+      if (edge.kind !== 'topic') continue;
+      const sourceNode = this.nodeMap.get(edge.source);
+      const targetNode = this.nodeMap.get(edge.target);
+      if (!sourceNode || !targetNode) continue;
+      const topic = sourceNode.kind === 'topic' ? sourceNode : targetNode;
+      const other = topic === sourceNode ? targetNode : sourceNode;
+      if (topic.kind !== 'topic' || other.kind !== 'document') continue;
+      if (!means.has(topic.id)) means.set(topic.id, { sin: 0, cos: 0 });
+      const mean = means.get(topic.id);
+      mean.sin += Math.sin(other.angle);
+      mean.cos += Math.cos(other.angle);
+    }
+
     const topics = this.nodes.filter((node) => node.kind === 'topic');
-    topics.forEach((node, index) => {
-      const angle = ((Math.PI * 2) / Math.max(1, topics.length)) * index + 0.18;
-      const radius = 440 + ((hashNumber(node.id) % 90) - 45);
-      node.x = Math.cos(angle) * radius;
-      node.y = Math.sin(angle) * radius * 0.72;
-    });
-    this.nodes.filter((node) => node.kind === 'document').forEach((node) => {
-      const parent = sourceIndex.get(node.source_type) || root || { x: 0, y: 0 };
-      const hash = hashNumber(node.id);
-      const angle = ((hash % 360) / 180) * Math.PI;
-      const radius = 55 + ((hash >>> 8) % 180);
-      node.x = parent.x + Math.cos(angle) * radius;
-      node.y = parent.y + Math.sin(angle) * radius * 0.72;
+    const spread = topics.map((node, index) => {
+      const mean = means.get(node.id);
+      const angle = mean && (mean.sin || mean.cos)
+        ? Math.atan2(mean.sin, mean.cos)
+        : ((Math.PI * 2) / Math.max(1, topics.length)) * index;
+      return { node, angle: (angle + Math.PI * 2) % (Math.PI * 2) };
+    }).sort((a, b) => a.angle - b.angle);
+
+    // Topics that share a neighbourhood would otherwise stack on one another.
+    const minGap = (Math.PI * 2) / Math.max(1, spread.length) * 0.7;
+    spread.forEach((entry, index) => {
+      if (index > 0) {
+        const previous = spread[index - 1].angle;
+        if (entry.angle - previous < minGap) entry.angle = previous + minGap;
+      }
+      entry.node.angle = entry.angle;
+      entry.node.orbit = orbit;
     });
   }
 
   start() {
     if (this.frame) cancelAnimationFrame(this.frame);
-    const step = () => {
-      if (this.simulationFrames > 0) {
-        this.simulate();
-        this.simulationFrames -= 1;
-      }
+    if (this.reducedMotion) {
+      this.settle();
       this.render();
-      if (this.simulationFrames > 0) this.frame = requestAnimationFrame(step);
-      else this.frame = null;
+      this.frame = null;
+      return;
+    }
+
+    const step = (now) => {
+      const elapsed = now - this.animationStart;
+      for (const node of this.nodes) {
+        if (node.pinned) continue;
+        // Bloom out of the centre, then breathe gently in place forever.
+        const entry = 1 - (1 - clamp01((elapsed - node.delay) / ENTRY_MS)) ** 3;
+        const breath = Math.sin(elapsed * 0.0006 + node.phase) * 1.6 * entry;
+        const orbit = (node.orbit + breath) * entry;
+        node.x = Math.cos(node.angle) * orbit;
+        node.y = Math.sin(node.angle) * orbit * FLATTEN;
+      }
+      this.pulse = (elapsed % PULSE_PERIOD) / PULSE_PERIOD;
+      this.render();
+      this.frame = this.awake() ? requestAnimationFrame(step) : null;
     };
+
     this.frame = requestAnimationFrame(step);
   }
 
-  simulate() {
-    for (const edge of this.edges) {
-      const source = this.nodeMap.get(edge.source);
-      const target = this.nodeMap.get(edge.target);
-      if (!source || !target) continue;
-      const dx = target.x - source.x;
-      const dy = target.y - source.y;
-      const distance = Math.max(1, Math.hypot(dx, dy));
-      const desired = edge.kind === 'topic' ? 145 : source.kind === 'root' ? 275 : 105;
-      const force = (distance - desired) * (edge.kind === 'topic' ? 0.0012 : 0.0023);
-      const fx = (dx / distance) * force;
-      const fy = (dy / distance) * force;
-      if (!source.fixed) {
-        source.vx += fx;
-        source.vy += fy;
-      }
-      if (!target.fixed) {
-        target.vx -= fx;
-        target.vy -= fy;
-      }
-    }
+  /** Idle motion is not worth a frame when nobody can see the canvas. */
+  awake() {
+    return !document.hidden && this.onScreen !== false;
+  }
 
-    const buckets = new Map();
-    const cellSize = 38;
-    for (const node of this.nodes) {
-      if (node.kind !== 'document') continue;
-      const key = `${Math.floor(node.x / cellSize)}:${Math.floor(node.y / cellSize)}`;
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key).push(node);
-    }
-    for (const bucket of buckets.values()) {
-      for (let left = 0; left < bucket.length; left += 1) {
-        for (let right = left + 1; right < bucket.length; right += 1) {
-          const first = bucket[left];
-          const second = bucket[right];
-          const dx = second.x - first.x || 0.1;
-          const dy = second.y - first.y || 0.1;
-          const distance = Math.hypot(dx, dy);
-          if (distance >= 19) continue;
-          const push = (19 - distance) * 0.012;
-          first.vx -= (dx / distance) * push;
-          first.vy -= (dy / distance) * push;
-          second.vx += (dx / distance) * push;
-          second.vy += (dy / distance) * push;
-        }
-      }
-    }
-
-    for (const node of this.nodes) {
-      if (node.fixed) continue;
-      node.vx += -node.x * 0.000012;
-      node.vy += -node.y * 0.000012;
-      node.vx *= 0.89;
-      node.vy *= 0.89;
-      node.x += node.vx;
-      node.y += node.vy;
+  resume() {
+    if (!this.frame && !this.reducedMotion && this.nodes.length && this.awake()) {
+      // Rebase the clock so a backgrounded tab does not replay the entry.
+      this.animationStart = performance.now() - ENTRY_MS - this.maxOrbit;
+      this.start();
     }
   }
 
@@ -313,7 +418,7 @@ class RagGraph {
       lastY: event.clientY,
       moved: false,
     };
-    if (node) node.fixed = true;
+    if (node) node.pinned = true;
     this.canvas.setPointerCapture(event.pointerId);
   }
 
@@ -341,8 +446,6 @@ class RagGraph {
     } else if (this.pointer.node) {
       this.pointer.node.x = point.x;
       this.pointer.node.y = point.y;
-      this.pointer.node.vx = 0;
-      this.pointer.node.vy = 0;
     }
     this.render();
   }
@@ -354,7 +457,15 @@ class RagGraph {
       this.selectedNodeId = node.id;
       this.onSelect(node.document_id);
     }
-    if (node && node.kind !== 'root' && node.kind !== 'source') node.fixed = false;
+    if (node) {
+      // Adopt wherever the node was dropped as its new orbit, so releasing it
+      // does not snap it back across the canvas.
+      if (moved) {
+        node.angle = Math.atan2(node.y / FLATTEN, node.x);
+        node.orbit = Math.hypot(node.x, node.y / FLATTEN);
+      }
+      node.pinned = false;
+    }
     this.pointer = null;
     this.canvas.releasePointerCapture(event.pointerId);
     this.render();
@@ -390,8 +501,10 @@ class RagGraph {
 
   fit() {
     if (!this.nodes.length || !this.viewport) return;
-    const xs = this.nodes.map((node) => node.x);
-    const ys = this.nodes.map((node) => node.y);
+    // Frame the settled layout, not the in-flight entry animation, or the view
+    // would be fitted to a cluster of nodes still stacked at the centre.
+    const xs = this.nodes.map((node) => Math.cos(node.angle) * node.orbit);
+    const ys = this.nodes.map((node) => Math.sin(node.angle) * node.orbit * FLATTEN);
     const minX = Math.min(...xs) - 55;
     const maxX = Math.max(...xs) + 55;
     const minY = Math.min(...ys) - 55;
@@ -440,31 +553,54 @@ class RagGraph {
       const source = this.nodeMap.get(edge.source);
       const target = this.nodeMap.get(edge.target);
       if (!source || !target) continue;
-      const highlighted = !selected || connected.has(source.id) && connected.has(target.id);
+      const linked = connected.has(source.id) && connected.has(target.id);
+      const highlighted = !selected || linked;
+      const isTopic = edge.kind === 'topic';
+      // Topic links jump between wedges, so 681 straight chords would rebuild
+      // the hairball. Bowing them towards the centre keeps them readable and
+      // holds them well clear of the document arcs.
+      const alpha = isTopic
+        ? (selected && linked ? 0.3 : highlighted ? 0.05 : 0.015)
+        : (highlighted ? 0.16 : 0.025);
       ctx.beginPath();
       ctx.moveTo(source.x, source.y);
-      ctx.lineTo(target.x, target.y);
-      ctx.strokeStyle = edge.kind === 'topic'
-        ? `rgba(165,144,255,${highlighted ? 0.19 : 0.025})`
-        : `rgba(83,217,229,${highlighted ? 0.16 : 0.025})`;
+      if (isTopic) {
+        ctx.quadraticCurveTo((source.x + target.x) * 0.22, (source.y + target.y) * 0.22, target.x, target.y);
+      } else {
+        ctx.lineTo(target.x, target.y);
+      }
+      ctx.strokeStyle = isTopic ? `rgba(139,147,184,${alpha})` : `rgba(83,217,229,${alpha})`;
       ctx.lineWidth = (highlighted ? 0.75 : 0.35) / this.transform.scale ** 0.25;
       ctx.stroke();
     }
 
+    // A slow ring sweeping outwards from the root, brightening the nodes it
+    // crosses — the retrieval pass made visible.
+    const pulseOrbit = this.reducedMotion ? -1 : this.pulse * (this.maxOrbit || 0) * 1.05;
+    if (pulseOrbit > 0) {
+      ctx.beginPath();
+      ctx.ellipse(0, 0, pulseOrbit, pulseOrbit * FLATTEN, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(83,217,229,${0.16 * (1 - this.pulse)})`;
+      ctx.lineWidth = 1.1 / this.transform.scale ** 0.25;
+      ctx.stroke();
+    }
+
     for (const node of this.nodes) {
-      const radius = this.nodeRadius(node);
       const color = node.kind === 'topic'
-        ? '#a590ff'
+        ? TOPIC_COLOR
         : node.kind === 'root'
           ? '#ffffff'
           : SOURCE_COLORS[node.source_type] || '#7f8c95';
       const isSelected = node.id === selected;
       const isHovered = node.id === this.hoveredNodeId;
       const dimmed = selected && !connected.has(node.id);
+      // Swell briefly as the pulse ring passes over this orbit.
+      const wake = pulseOrbit > 0 ? Math.max(0, 1 - Math.abs(node.orbit - pulseOrbit) / 44) : 0;
+      const radius = this.nodeRadius(node) * (1 + wake * 0.3);
       ctx.globalAlpha = dimmed ? 0.18 : node.status === 'repealed' ? 0.42 : 0.92;
-      if (isSelected || isHovered || node.kind === 'root') {
+      if (isSelected || isHovered || node.kind === 'root' || wake > 0.05) {
         ctx.shadowColor = color;
-        ctx.shadowBlur = isSelected ? 18 : 10;
+        ctx.shadowBlur = isSelected ? 18 : isHovered || node.kind === 'root' ? 10 : wake * 9;
       } else {
         ctx.shadowBlur = 0;
       }
@@ -500,6 +636,7 @@ class RagGraph {
   destroy() {
     this.controller.abort();
     this.resizeObserver.disconnect();
+    this.intersectionObserver?.disconnect();
     if (this.frame) cancelAnimationFrame(this.frame);
     this.frame = null;
   }
