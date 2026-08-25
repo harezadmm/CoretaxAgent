@@ -65,7 +65,7 @@ def health() -> dict[str, object]:
         "status": "ok",
         "knowledge_chunks": len(knowledge_base.chunks),
         "model_configured": bool(
-            settings.openai_api_key and settings.openai_model
+            settings.llm_api_key and settings.llm_model
         ),
     }
 

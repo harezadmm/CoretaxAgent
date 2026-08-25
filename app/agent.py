@@ -38,9 +38,11 @@ class CoretaxAgent:
     def __init__(self, settings: Settings, knowledge_base: KnowledgeBase):
         self.settings = settings
         self.knowledge_base = knowledge_base
+        # The OpenAI SDK is kept only as an HTTP client for the OpenAI-compatible
+        # wire format; base_url decides which provider actually answers.
         self.client = (
-            OpenAI(api_key=settings.openai_api_key)
-            if settings.openai_api_key
+            OpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
+            if settings.llm_api_key
             else None
         )
 
@@ -70,7 +72,7 @@ class CoretaxAgent:
             for result in results
         ]
 
-        if not self.client or not self.settings.openai_model:
+        if not self.client or not self.settings.llm_model:
             return AskResponse(
                 status="escalated",
                 answer=(
@@ -82,12 +84,20 @@ class CoretaxAgent:
             )
 
         context = self._format_context(results)
-        response = self.client.responses.create(
-            model=self.settings.openai_model,
-            instructions=SYSTEM_INSTRUCTIONS,
-            input=f"PERTANYAAN:\n{question}\n\nKONTEKS RESMI:\n{context}",
+        # Chat completions rather than the Responses API: the latter is
+        # OpenAI-only, and this call has to reach whichever provider the model
+        # id points at.
+        response = self.client.chat.completions.create(
+            model=self.settings.llm_model,
+            messages=[
+                {"role": "system", "content": SYSTEM_INSTRUCTIONS},
+                {
+                    "role": "user",
+                    "content": f"PERTANYAAN:\n{question}\n\nKONTEKS RESMI:\n{context}",
+                },
+            ],
         )
-        answer = response.output_text.strip()
+        answer = (response.choices[0].message.content or "").strip()
         if not answer:
             return self._escalate("Model tidak menghasilkan jawaban yang dapat digunakan.")
 

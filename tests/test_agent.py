@@ -9,8 +9,9 @@ from app.knowledge import KnowledgeBase
 
 def make_agent(tmp_path: Path) -> CoretaxAgent:
     settings = Settings(
-        openai_api_key=None,
-        openai_model=None,
+        llm_api_key=None,
+        llm_model=None,
+        llm_base_url=None,
         knowledge_dir=tmp_path,
         min_retrieval_score=0.12,
         max_context_docs=4,

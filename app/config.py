@@ -10,10 +10,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+# Any OpenAI-compatible endpoint works here. Vercel's AI Gateway is the default
+# when its key is present because it fronts many providers behind one contract,
+# so switching models is an env change rather than a code change.
+AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1"
+
+
 @dataclass(frozen=True)
 class Settings:
-    openai_api_key: str | None
-    openai_model: str | None
+    llm_api_key: str | None
+    llm_model: str | None
+    llm_base_url: str | None
     knowledge_dir: Path
     min_retrieval_score: float
     max_context_docs: int
@@ -38,9 +45,18 @@ def get_settings() -> Settings:
     if not knowledge_dir.is_absolute():
         knowledge_dir = project_root / knowledge_dir
 
+    # Prefer the neutral names, fall back to the OpenAI-specific ones this
+    # project started with so existing deployments keep working untouched.
+    gateway_key = _clean_secret("AI_GATEWAY_API_KEY")
+    llm_api_key = _clean_secret("LLM_API_KEY") or gateway_key or _clean_secret("OPENAI_API_KEY")
+    base_url = _clean_secret("LLM_BASE_URL")
+    if not base_url and gateway_key:
+        base_url = AI_GATEWAY_BASE_URL
+
     return Settings(
-        openai_api_key=os.getenv("OPENAI_API_KEY") or None,
-        openai_model=os.getenv("OPENAI_MODEL") or None,
+        llm_api_key=llm_api_key,
+        llm_model=_clean_secret("LLM_MODEL") or _clean_secret("OPENAI_MODEL"),
+        llm_base_url=base_url,
         knowledge_dir=knowledge_dir,
         min_retrieval_score=float(os.getenv("MIN_RETRIEVAL_SCORE", "0.12")),
         max_context_docs=int(os.getenv("MAX_CONTEXT_DOCS", "4")),
