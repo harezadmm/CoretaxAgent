@@ -930,3 +930,5 @@
 .rag-resize-handle:focus-visible{ outline:1px solid var(--cyan,#52d7e8); outline-offset:1px; }
 .rag-resize-handle.dragging{ border-color:#3d5960; }
 .rag-resize-handle.dragging span{ width:70px; background:var(--cyan,#52d7e8); }
+
+.rag-tool-button[data-rag-spin].off{ color:#5d6a74; border-color:#2c353b; }

@@ -37,6 +37,7 @@ const TOPIC_COLOR = '#8b93b8';
 const PULSE_PERIOD = 5200;
 // Radians per second: about 17 degrees, so a full turn takes roughly 21s.
 const ROTATION_RATE = 0.3;
+const SPIN_STORAGE_KEY = 'coretax.ragAutoSpin';
 
 const STATUS_LABELS = {
   active: 'Aktif',
@@ -129,7 +130,6 @@ class RagGraph {
     this.pitch = 0.34;
     this.reducedMotion = false;
     this.onScreen = true;
-    this.pointerInside = false;
     this.transform = { x: 0, y: 0, scale: 1 };
     this.pointer = null;
     this.controller = new AbortController();
@@ -145,11 +145,7 @@ class RagGraph {
     this.canvas.addEventListener('pointermove', (event) => this.pointerMove(event), { signal });
     this.canvas.addEventListener('pointerup', (event) => this.pointerUp(event), { signal });
     this.canvas.addEventListener('pointercancel', () => { this.pointer = null; }, { signal });
-    this.canvas.addEventListener('pointerenter', () => {
-      this.pointerInside = true;
-    }, { signal });
     this.canvas.addEventListener('pointerleave', () => {
-      this.pointerInside = false;
       if (!this.pointer && this.hoveredNodeId) {
         this.hoveredNodeId = null;
         this.render();
@@ -190,6 +186,7 @@ class RagGraph {
     this.pixelRatio = ratio;
     this.viewport = { width, height };
     this.render();
+    this.resume();
   }
 
   setData(payload) {
@@ -205,6 +202,11 @@ class RagGraph {
     this.layoutSphere();
     this.buildMesh();
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const stored = window.localStorage.getItem(SPIN_STORAGE_KEY);
+    // Default follows the accessibility preference, but the reader can override
+    // it. Letting the OS flag silently kill the rotation left no way to tell a
+    // deliberate setting from a broken feature.
+    this.autoRotate = stored === null ? !this.reducedMotion : stored === 'on';
     this.animationStart = performance.now();
     this.pulse = 0;
     this.project();
@@ -340,9 +342,16 @@ class RagGraph {
     this.project();
   }
 
+  setAutoRotate(on) {
+    this.autoRotate = Boolean(on);
+    window.localStorage.setItem(SPIN_STORAGE_KEY, this.autoRotate ? 'on' : 'off');
+    this.start();
+    return this.autoRotate;
+  }
+
   start() {
     if (this.frame) cancelAnimationFrame(this.frame);
-    if (this.reducedMotion) {
+    if (!this.autoRotate) {
       this.project();
       this.render();
       this.frame = null;
@@ -357,9 +366,14 @@ class RagGraph {
       // minute, which reads as a still image.
       const delta = Math.min(0.05, (now - this.lastFrame) / 1000);
       this.lastFrame = now;
-      // Hold still while the reader is dragging or has the cursor over the orb:
-      // you cannot click a target that is walking away from the pointer.
-      if (!this.pointer && !this.pointerInside) this.yaw += ROTATION_RATE * delta;
+      // Never stop outright. With 6.5k dots filling the orb, "the cursor is on
+      // a dot" is very nearly "the cursor is over the canvas", so pausing on
+      // hover froze the animation exactly as pausing on the whole canvas did.
+      // Crawl instead, which keeps a hovered dot catchable without the graph
+      // ever looking dead.
+      if (!this.pointer) {
+        this.yaw += ROTATION_RATE * (this.hoveredNodeId ? 0.15 : 1) * delta;
+      }
       this.project();
       this.pulse = (elapsed % PULSE_PERIOD) / PULSE_PERIOD;
       this.render();
@@ -375,7 +389,7 @@ class RagGraph {
   }
 
   resume() {
-    if (!this.frame && !this.reducedMotion && this.nodes.length && this.awake()) {
+    if (!this.frame && this.autoRotate && this.nodes.length && this.awake()) {
       this.animationStart = performance.now();
       this.start();
     }
@@ -759,6 +773,7 @@ function shellMarkup(capabilities) {
             <button type="button" data-rag-action="zoom-in" aria-label="Perbesar">＋</button>
             <button type="button" data-rag-action="zoom-out" aria-label="Perkecil">−</button>
             <button type="button" data-rag-action="fit" aria-label="Tampilkan seluruh graph">⌗</button>
+            <button type="button" data-rag-action="toggle-spin" data-rag-spin aria-label="Putar otomatis" title="Putar otomatis">↻</button>
           </div>
           <div class="rag-legend"><span><i class="legend-official"></i>Resmi</span><span><i class="legend-curated"></i>Curated</span><span><i class="legend-managed"></i>Operator</span><span><i class="legend-topic"></i>Topik</span></div>
         </div>
@@ -1024,6 +1039,11 @@ export function mountRagManagement(root, notify = () => {}) {
     const payload = await request(`/api/knowledge/graph?${graphParams()}`);
     if (state.destroyed) return payload;
     state.graph.setData(payload);
+    // Reflect the stored auto-spin choice on the toolbar button.
+    root.querySelectorAll('[data-rag-spin]').forEach((button) => {
+      button.classList.toggle('off', !state.graph.autoRotate);
+      button.setAttribute('aria-pressed', String(state.graph.autoRotate));
+    });
     const suffix = payload.truncated ? ` · menampilkan sampel ${formatNumber(payload.displayed_documents)}` : '';
     root.querySelector('[data-rag-graph-summary]').textContent = `${formatNumber(payload.total_documents)} dokumen · ${formatNumber(payload.nodes.length)} nodes${suffix}`;
     if (!payload.displayed_documents) {
@@ -1185,6 +1205,11 @@ export function mountRagManagement(root, notify = () => {}) {
       if (action === 'zoom-in') state.graph.zoom(1.2);
       if (action === 'zoom-out') state.graph.zoom(0.84);
       if (action === 'fit') state.graph.fit();
+      if (action === 'toggle-spin') {
+        const on = state.graph.setAutoRotate(!state.graph.autoRotate);
+        root.querySelectorAll('[data-rag-spin]').forEach((button) => button.classList.toggle('off', !on));
+        notify(on ? 'Rotasi otomatis aktif.' : 'Rotasi otomatis dimatikan.');
+      }
       if (action === 'close-editor') root.querySelector('[data-rag-dialog="editor"]').close();
       if (action === 'import-file') root.querySelector('[data-rag-file]').click();
       if (action === 'previous-page' && state.page > 1) { state.page -= 1; loadDocuments(); }
