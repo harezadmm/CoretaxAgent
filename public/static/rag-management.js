@@ -3,10 +3,6 @@ const TOKEN_STORAGE_KEY = 'coretax.ragAdminToken';
 // corpus stays interactive; see render().
 const GRAPH_LIMIT = 20000;
 
-// Past this many nodes the topic mesh is noise rather than information, so it
-// only appears for whatever is selected.
-const TOPIC_EDGE_BUDGET = 1500;
-
 const SOURCE_LABELS = {
   official_regulation: 'Regulasi DJP',
   official_html: 'Coretaxpedia',
@@ -38,15 +34,7 @@ const SOURCE_COLORS = {
 // the violet to official_pdf.
 const TOPIC_COLOR = '#8b93b8';
 
-// The disc is squashed vertically because the canvas is far wider than it is
-// tall; every placement and every hit test goes through this same factor.
-const FLATTEN = 0.75;
 const PULSE_PERIOD = 5200;
-
-function withAlpha(hex, alpha) {
-  const int = parseInt(hex.slice(1), 16);
-  return `rgba(${(int >> 16) & 255},${(int >> 8) & 255},${int & 255},${alpha})`;
-}
 
 const STATUS_LABELS = {
   active: 'Aktif',
@@ -133,12 +121,12 @@ class RagGraph {
     this.hoveredNodeId = null;
     this.frame = null;
     this.pulse = 0;
-    this.maxOrbit = 0;
+    this.radius = 400;
+    this.mesh = [];
+    this.yaw = 0;
+    this.pitch = 0.34;
     this.reducedMotion = false;
     this.onScreen = true;
-    this.geometryVersion = 0;
-    this.edgeCacheKey = null;
-    this.edgeLanes = [];
     this.transform = { x: 0, y: 0, scale: 1 };
     this.pointer = null;
     this.controller = new AbortController();
@@ -199,56 +187,167 @@ class RagGraph {
   setData(payload) {
     this.nodes = payload.nodes.map((node) => ({
       ...node,
-      x: 0,
-      y: 0,
-      vx: 0,
-      vy: 0,
-      clusterX: 0,
-      clusterY: 0,
-      orbit: 0,
-      pinned: false,
+      bx: 0, by: 0, bz: 0,
+      sx: 0, sy: 0, near: 0, persp: 1,
     }));
     this.edges = payload.edges;
     this.nodeMap = new Map(this.nodes.map((node) => [node.id, node]));
-    this.layoutOrganicClusters();
+    this.yaw = 0.6;
+    this.pitch = 0.34;
+    this.layoutSphere();
+    this.buildMesh();
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.animationStart = performance.now();
     this.pulse = 0;
-    // Fresh data relaxes from scratch; resuming after a hidden tab or a drag
-    // must not reset the cooling, so only setData seeds this.
-    this.alpha = 1;
-    this.geometryVersion += 1;
-    this.edgeCacheKey = null;
-    if (this.reducedMotion) this.settle();
+    this.project();
     this.fit();
     this.start();
   }
 
-  /** Relax the whole graph at once, for readers who opted out of motion. */
+  /**
+   * Scatter the corpus through a ball rather than across a plane.
+   *
+   * Direction comes from a Fibonacci spiral, which spaces points evenly over a
+   * sphere. Radius comes from the cube root of a hashed value, which is what
+   * spreads density evenly through the volume instead of piling everything onto
+   * the surface. Two harmonics then push the shell in and out so the silhouette
+   * is ragged rather than a machined ball.
+   */
+  layoutSphere() {
+    const documents = this.nodes.filter((node) => node.kind === 'document');
+    const radius = Math.max(260, Math.min(640, Math.cbrt(Math.max(1, documents.length)) * 23));
+    this.radius = radius;
+
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    documents.forEach((node, index) => {
+      const hash = hashNumber(node.id);
+      const t = (index + 0.5) / documents.length;
+      const y = 1 - 2 * t;
+      const ring = Math.sqrt(Math.max(0, 1 - y * y));
+      const theta = index * golden + ((hash % 100) / 100 - 0.5) * 0.5;
+
+      const fill = Math.cbrt(0.05 + 0.95 * (((hash >>> 6) % 1000) / 1000));
+      const spike = 1 + 0.22 * Math.sin(theta * 3 + y * 4) + 0.15 * Math.sin(theta * 5 - y * 7);
+      const reach = radius * fill * spike;
+
+      node.bx = Math.cos(theta) * ring * reach;
+      node.by = y * reach;
+      node.bz = Math.sin(theta) * ring * reach;
+    });
+
+    const root = this.nodeMap.get('rag-root');
+    if (root) { root.bx = 0; root.by = 0; root.bz = 0; }
+
+    // Sources ride an inner shell and topics an outer one, so both stay legible
+    // against the document haze between them.
+    const shell = (list, distance, offset) => {
+      list.forEach((node, index) => {
+        const t = (index + 0.5) / Math.max(1, list.length);
+        const y = 1 - 2 * t;
+        const ring = Math.sqrt(Math.max(0, 1 - y * y));
+        const theta = index * golden + offset;
+        node.bx = Math.cos(theta) * ring * distance;
+        node.by = y * distance;
+        node.bz = Math.sin(theta) * ring * distance;
+      });
+    };
+    shell(this.nodes.filter((node) => node.kind === 'source'), radius * 0.34, 0.4);
+    shell(this.nodes.filter((node) => node.kind === 'topic'), radius * 1.14, 1.1);
+  }
+
+  /**
+   * Link every document to its nearest neighbour so the orb reads as a web.
+   *
+   * This is a visual scaffold, not a claim about the corpus: the real edges run
+   * hub-and-spoke from four source nodes and project as a starburst, which is
+   * not the reference at all. Selection still highlights the real edges. Built
+   * once, because the positions only rotate afterwards.
+   */
+  buildMesh() {
+    const cell = Math.max(24, this.radius / 9);
+    const documents = this.nodes.filter((node) => node.kind === 'document');
+    const buckets = new Map();
+    for (const node of documents) {
+      const id = `${Math.round(node.bx / cell)}:${Math.round(node.by / cell)}:${Math.round(node.bz / cell)}`;
+      let bucket = buckets.get(id);
+      if (!bucket) { bucket = []; buckets.set(id, bucket); }
+      bucket.push(node);
+    }
+
+    const mesh = [];
+    const seen = new Set();
+    for (const node of documents) {
+      const cx = Math.round(node.bx / cell);
+      const cy = Math.round(node.by / cell);
+      const cz = Math.round(node.bz / cell);
+      const candidates = [];
+      for (let ox = -1; ox <= 1; ox += 1) {
+        for (let oy = -1; oy <= 1; oy += 1) {
+          for (let oz = -1; oz <= 1; oz += 1) {
+            const bucket = buckets.get(`${cx + ox}:${cy + oy}:${cz + oz}`);
+            if (bucket) candidates.push(...bucket);
+          }
+        }
+      }
+      const distance = (other) => (other.bx - node.bx) ** 2 + (other.by - node.by) ** 2 + (other.bz - node.bz) ** 2;
+      candidates.sort((a, b) => distance(a) - distance(b));
+      let taken = 0;
+      for (const other of candidates) {
+        if (taken >= 1) break;
+        if (other === node) continue;
+        const pair = node.id < other.id ? `${node.id}|${other.id}` : `${other.id}|${node.id}`;
+        if (seen.has(pair)) continue;
+        seen.add(pair);
+        mesh.push([node, other]);
+        taken += 1;
+      }
+    }
+    this.mesh = mesh;
+  }
+
+  /** Rotate the fixed positions into screen space and record their depth. */
+  project() {
+    const cosYaw = Math.cos(this.yaw);
+    const sinYaw = Math.sin(this.yaw);
+    const cosPitch = Math.cos(this.pitch);
+    const sinPitch = Math.sin(this.pitch);
+    const focal = this.radius * 3.1;
+    const span = this.radius * 1.35;
+
+    for (const node of this.nodes) {
+      const x1 = node.bx * cosYaw - node.bz * sinYaw;
+      const z1 = node.bx * sinYaw + node.bz * cosYaw;
+      const y1 = node.by * cosPitch - z1 * sinPitch;
+      const z2 = node.by * sinPitch + z1 * cosPitch;
+      const persp = focal / (focal + z2);
+      node.sx = x1 * persp;
+      node.sy = y1 * persp;
+      node.persp = persp;
+      // 1 nearest the viewer, 0 furthest from it.
+      node.near = Math.min(1, Math.max(0, 1 - (z2 + span) / (2 * span)));
+    }
+  }
+
   settle() {
-    for (let step = 0; step < 220; step += 1) this.tick(1 - step / 260);
-    this.updateExtent();
-    this.geometryVersion += 1;
+    this.project();
   }
 
   start() {
     if (this.frame) cancelAnimationFrame(this.frame);
     if (this.reducedMotion) {
+      this.project();
       this.render();
       this.frame = null;
       return;
     }
 
     const step = (now) => {
-      // Cooling relaxation: the graph visibly finds its own shape, then holds
-      // still so the edge cache can stop rebuilding.
-      if (this.alpha > 0.02) {
-        this.tick(this.alpha);
-        this.alpha *= 0.988;
-        this.updateExtent();
-        this.geometryVersion += 1;
-      }
-      this.pulse = ((now - this.animationStart) % PULSE_PERIOD) / PULSE_PERIOD;
+      const elapsed = now - this.animationStart;
+      // Hold still while the reader is dragging, so their rotation is the only
+      // motion they have to track.
+      if (!this.pointer) this.yaw += 0.0017;
+      this.project();
+      this.pulse = (elapsed % PULSE_PERIOD) / PULSE_PERIOD;
       this.render();
       this.frame = this.awake() ? requestAnimationFrame(step) : null;
     };
@@ -265,224 +364,6 @@ class RagGraph {
     if (!this.frame && !this.reducedMotion && this.nodes.length && this.awake()) {
       this.animationStart = performance.now();
       this.start();
-    }
-  }
-
-  /**
-   * Seed organic clusters, one per source type.
-   *
-   * An earlier version packed documents into strict concentric arcs. It was
-   * tidy but mechanical, and it read as a fan rather than a memory graph, so
-   * placement is now a rough disc per cluster that the simulation relaxes into
-   * its own shape.
-   */
-  layoutOrganicClusters() {
-    const SPACING = 14;
-
-    const byType = new Map();
-    for (const node of this.nodes) {
-      if (node.kind !== 'document') continue;
-      const key = node.source_type || 'unknown';
-      if (!byType.has(key)) byType.set(key, []);
-      byType.get(key).push(node);
-    }
-
-    // A disc holding n dots at SPACING apart has radius ~sqrt(n/pi)*SPACING.
-    const clusters = [...byType.entries()]
-      .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
-      .map(([type, docs]) => ({ type, docs, radius: Math.sqrt(docs.length / Math.PI) * SPACING + 40 }));
-
-    // Largest cluster takes the middle; the rest ring it just far enough out to
-    // clear both radii, which keeps the groups legible without a rigid grid.
-    const placed = [];
-    clusters.forEach((cluster, index) => {
-      if (index === 0) {
-        cluster.cx = 0;
-        cluster.cy = 0;
-      } else {
-        const golden = index * 2.399963;
-        // The vertical squash below shortens the real gap, so pad for it here.
-        const distance = (clusters[0].radius + cluster.radius + 130) * 1.22;
-        cluster.cx = Math.cos(golden) * distance;
-        cluster.cy = Math.sin(golden) * distance * 0.82;
-      }
-      placed.push(cluster);
-    });
-
-    const sourceByType = new Map(
-      this.nodes.filter((node) => node.kind === 'source').map((node) => [node.source_type, node]),
-    );
-
-    for (const cluster of placed) {
-      const source = sourceByType.get(cluster.type);
-      if (source) {
-        source.x = cluster.cx;
-        source.y = cluster.cy;
-        source.clusterX = cluster.cx;
-        source.clusterY = cluster.cy;
-      }
-      // Break the cluster into lobes. A sunflower disc is even by construction,
-      // which is precisely what made the previous layout look machine-made: no
-      // amount of jitter rescues a shape whose outline is a perfect circle.
-      const lobeCount = Math.max(1, Math.min(7, Math.round(Math.sqrt(cluster.docs.length) / 9)));
-      const lobes = [];
-      for (let index = 0; index < lobeCount; index += 1) {
-        const hash = hashNumber(`${cluster.type}:lobe:${index}`);
-        const angle = ((hash % 3600) / 3600) * Math.PI * 2;
-        const reach = (0.12 + ((hash >>> 12) % 100) / 150) * cluster.radius;
-        lobes.push({
-          x: cluster.cx + Math.cos(angle) * reach,
-          y: cluster.cy + Math.sin(angle) * reach * 0.9,
-          weight: 0.55 + ((hash >>> 5) % 100) / 110,
-        });
-      }
-      const totalWeight = lobes.reduce((sum, lobe) => sum + lobe.weight, 0);
-      for (const lobe of lobes) {
-        lobe.radius = Math.sqrt(lobe.weight / totalWeight) * cluster.radius * 1.05;
-      }
-
-      cluster.docs.forEach((node) => {
-        const hash = hashNumber(node.id);
-        const lobe = lobes[hash % lobes.length];
-        const spread = ((hash >>> 3) % 1000) / 1000;
-        const angle = (((hash >>> 11) % 3600) / 3600) * Math.PI * 2;
-        // Two harmonics on the reach give the lobe a ragged edge instead of a
-        // rim; the union of several such lobes is what reads as organic.
-        const wobble = 1 + 0.26 * Math.sin(angle * 3 + lobe.x * 0.01) + 0.16 * Math.sin(angle * 5 + lobe.y * 0.01);
-        const radius = Math.sqrt(spread) * lobe.radius * wobble;
-        node.x = lobe.x + Math.cos(angle) * radius;
-        node.y = lobe.y + Math.sin(angle) * radius * 0.9;
-        // Gravity aims at the lobe, not the cluster centre, so relaxation keeps
-        // the lumpy outline instead of rounding it back into a disc.
-        node.clusterX = lobe.x;
-        node.clusterY = lobe.y;
-      });
-    }
-
-    this.seedTopics();
-    this.updateExtent();
-  }
-
-  /** Drop each topic onto the centre of mass of the documents it links. */
-  seedTopics() {
-    const means = new Map();
-    for (const edge of this.edges) {
-      if (edge.kind !== 'topic') continue;
-      const a = this.nodeMap.get(edge.source);
-      const b = this.nodeMap.get(edge.target);
-      if (!a || !b) continue;
-      const topic = a.kind === 'topic' ? a : b;
-      const other = topic === a ? b : a;
-      if (topic.kind !== 'topic' || other.kind !== 'document') continue;
-      if (!means.has(topic.id)) means.set(topic.id, { x: 0, y: 0, n: 0 });
-      const mean = means.get(topic.id);
-      mean.x += other.x;
-      mean.y += other.y;
-      mean.n += 1;
-    }
-    for (const node of this.nodes) {
-      if (node.kind !== 'topic') continue;
-      const mean = means.get(node.id);
-      const hash = hashNumber(node.id);
-      if (mean && mean.n) {
-        node.x = mean.x / mean.n + ((hash % 80) - 40);
-        node.y = mean.y / mean.n + (((hash >>> 8) % 80) - 40);
-      } else {
-        node.x = ((hash % 600) - 300);
-        node.y = (((hash >>> 8) % 600) - 300);
-      }
-      node.clusterX = node.x;
-      node.clusterY = node.y;
-    }
-  }
-
-  updateExtent() {
-    let maxOrbit = 1;
-    for (const node of this.nodes) {
-      node.orbit = Math.hypot(node.x, node.y);
-      if (node.orbit > maxOrbit) maxOrbit = node.orbit;
-    }
-    this.maxOrbit = maxOrbit;
-  }
-
-  /**
-   * One relaxation tick: springs along the contains-edges, short-range
-   * repulsion so dots never pile up, and a weak pull towards the node's own
-   * cluster. Repulsion goes through a spatial hash, so the cost stays linear
-   * even with the whole corpus on screen.
-   */
-  tick(alpha) {
-    const CELL = 15;
-    const SPAN = 1 << 16;
-    const buckets = new Map();
-    for (const node of this.nodes) {
-      // Numeric keys: building 6.5k template strings per tick, then nine more
-      // lookups each, was most of the frame budget.
-      const key = (Math.round(node.x / CELL) + SPAN) * (SPAN * 2) + (Math.round(node.y / CELL) + SPAN);
-      let bucket = buckets.get(key);
-      if (!bucket) { bucket = []; buckets.set(key, bucket); }
-      bucket.push(node);
-    }
-
-    // Only the root-to-source links behave like springs. Pulling every document
-    // to a fixed distance from its source cannot be satisfied by thousands of
-    // them at once, and the attempt crushed the cluster into a dense ring.
-    for (const edge of this.edges) {
-      if (edge.kind === 'topic') continue;
-      const a = this.nodeMap.get(edge.source);
-      const b = this.nodeMap.get(edge.target);
-      if (!a || !b || a.kind !== 'root' || b.kind !== 'source') continue;
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const distance = Math.hypot(dx, dy) || 0.01;
-      const force = ((distance - 300) / distance) * 0.02 * alpha;
-      b.vx -= dx * force;
-      b.vy -= dy * force;
-    }
-
-    for (const node of this.nodes) {
-      if (node.pinned || node.kind === 'root') continue;
-      const cx = Math.round(node.x / CELL);
-      const cy = Math.round(node.y / CELL);
-      for (let ox = -1; ox <= 1; ox += 1) {
-        for (let oy = -1; oy <= 1; oy += 1) {
-          const bucket = buckets.get((cx + ox + SPAN) * (SPAN * 2) + (cy + oy + SPAN));
-          if (!bucket) continue;
-          for (let index = 0; index < bucket.length; index += 1) {
-            const other = bucket[index];
-            if (other === node) continue;
-            const dx = node.x - other.x;
-            const dy = node.y - other.y;
-            const sq = dx * dx + dy * dy;
-            if (sq > CELL * CELL) continue;
-            if (sq === 0) {
-              // Exactly coincident. Skipping the pair, as this used to, leaves
-              // them welded together forever because the push direction is
-              // undefined; nudge each along its own hashed bearing instead.
-              const bearing = (hashNumber(node.id) % 628) / 100;
-              node.vx += Math.cos(bearing) * CELL * 0.3 * alpha;
-              node.vy += Math.sin(bearing) * CELL * 0.3 * alpha;
-              continue;
-            }
-            const distance = Math.sqrt(sq);
-            const push = ((CELL - distance) / distance) * 0.28 * alpha;
-            node.vx += dx * push;
-            node.vy += dy * push;
-          }
-        }
-      }
-      // Just enough gravity to stop a cluster drifting; the seed already sizes
-      // it, so anything stronger only compresses what repulsion spread out.
-      node.vx += (node.clusterX - node.x) * 0.0004 * alpha;
-      node.vy += (node.clusterY - node.y) * 0.0004 * alpha;
-    }
-
-    for (const node of this.nodes) {
-      if (node.pinned || node.kind === 'root') { node.vx = 0; node.vy = 0; continue; }
-      node.vx *= 0.82;
-      node.vy *= 0.82;
-      node.x += Math.max(-9, Math.min(9, node.vx));
-      node.y += Math.max(-9, Math.min(9, node.vy));
     }
   }
 
@@ -504,12 +385,19 @@ class RagGraph {
   }
 
   hitTest(point) {
-    for (let index = this.nodes.length - 1; index >= 0; index -= 1) {
-      const node = this.nodes[index];
-      const radius = this.nodeRadius(node) + 7 / this.transform.scale;
-      if (Math.hypot(point.x - node.x, point.y - node.y) <= radius) return node;
+    let best = null;
+    let bestNear = -1;
+    for (const node of this.nodes) {
+      const radius = this.nodeRadius(node) * (0.3 + node.near * 0.5) + 7 / this.transform.scale;
+      if (Math.hypot(point.x - node.sx, point.y - node.sy) > radius) continue;
+      // Dots overlap constantly once projected, so the one nearest the viewer
+      // is the one the reader means.
+      if (node.near > bestNear) {
+        bestNear = node.near;
+        best = node;
+      }
     }
-    return null;
+    return best;
   }
 
   pointerDown(event) {
@@ -517,7 +405,6 @@ class RagGraph {
     const node = this.hitTest(point);
     this.pointer = {
       id: event.pointerId,
-      mode: node ? 'node' : 'pan',
       node,
       startX: event.clientX,
       startY: event.clientY,
@@ -525,7 +412,6 @@ class RagGraph {
       lastY: event.clientY,
       moved: false,
     };
-    if (node) node.pinned = true;
     this.canvas.setPointerCapture(event.pointerId);
   }
 
@@ -540,6 +426,7 @@ class RagGraph {
       }
       return;
     }
+
     const dx = event.clientX - this.pointer.lastX;
     const dy = event.clientY - this.pointer.lastY;
     this.pointer.lastX = event.clientX;
@@ -547,17 +434,12 @@ class RagGraph {
     if (Math.hypot(event.clientX - this.pointer.startX, event.clientY - this.pointer.startY) > 4) {
       this.pointer.moved = true;
     }
-    if (this.pointer.mode === 'pan') {
-      this.transform.x += dx;
-      this.transform.y += dy;
-    } else if (this.pointer.node) {
-      this.pointer.node.x = point.x;
-      this.pointer.node.y = point.y;
-      this.geometryVersion += 1;
-      // Let the neighbours give way instead of staying frozen around the drag.
-      this.alpha = Math.max(this.alpha || 0, 0.3);
-      if (!this.frame) this.resume();
-    }
+
+    // Nodes are fixed to the sphere, so a drag turns the whole orb rather than
+    // pulling one dot out of it.
+    this.yaw += dx * 0.006;
+    this.pitch = Math.max(-1.25, Math.min(1.25, this.pitch + dy * 0.006));
+    this.project();
     this.render();
   }
 
@@ -568,16 +450,9 @@ class RagGraph {
       this.selectedNodeId = node.id;
       this.onSelect(node.document_id);
     }
-    if (node) {
-      // Anchor it where it was dropped so it is not dragged back by its cluster.
-      if (moved) {
-        node.clusterX = node.x;
-        node.clusterY = node.y;
-      }
-      node.pinned = false;
-    }
     this.pointer = null;
-    this.canvas.releasePointerCapture(event.pointerId);
+    if (this.canvas.hasPointerCapture(event.pointerId)) this.canvas.releasePointerCapture(event.pointerId);
+    this.resume();
     this.render();
   }
 
@@ -611,29 +486,19 @@ class RagGraph {
 
   fit() {
     if (!this.nodes.length || !this.viewport) return;
-    const xs = this.nodes.map((node) => node.x);
-    const ys = this.nodes.map((node) => node.y);
-    const minX = Math.min(...xs) - 55;
-    const maxX = Math.max(...xs) + 55;
-    const minY = Math.min(...ys) - 55;
-    const maxY = Math.max(...ys) + 55;
-    const scaleX = this.viewport.width / Math.max(1, maxX - minX);
-    const scaleY = this.viewport.height / Math.max(1, maxY - minY);
-    this.transform.scale = Math.min(1.35, Math.max(0.3, Math.min(scaleX, scaleY) * 0.92));
-    this.transform.x = this.viewport.width / 2 - ((minX + maxX) / 2) * this.transform.scale;
-    this.transform.y = this.viewport.height / 2 - ((minY + maxY) / 2) * this.transform.scale;
+    // Frame the sphere itself, not the current projection: fitting to a shape
+    // that rotates would make the view breathe once per revolution.
+    const extent = (this.radius || 400) * 1.32;
+    const scale = Math.min(this.viewport.width, this.viewport.height) / (extent * 2);
+    this.transform.scale = Math.min(1.6, Math.max(0.25, scale * 0.96));
+    this.transform.x = this.viewport.width / 2;
+    this.transform.y = this.viewport.height / 2;
     this.render();
   }
 
   selectDocument(documentId) {
     const node = this.nodes.find((entry) => entry.document_id === documentId);
     this.selectedNodeId = node?.id || null;
-    if (node && this.viewport) {
-      const targetScale = Math.max(this.transform.scale, 1.05);
-      this.transform.scale = targetScale;
-      this.transform.x = this.viewport.width / 2 - node.x * targetScale;
-      this.transform.y = this.viewport.height / 2 - node.y * targetScale;
-    }
     this.render();
   }
 
@@ -657,167 +522,131 @@ class RagGraph {
       }
     }
 
-    // Every edge sharing a stroke style is collected into one Path2D and drawn
-    // with a single stroke(). At full corpus that turns 15k canvas calls per
-    // frame into four, which is the difference between animating and crawling.
-    // Edge geometry only moves while nodes move, so rebuild it when the layout
-    // or the selection actually changes rather than once per frame.
-    const edgeKey = `${this.geometryVersion}|${selected || ''}`;
-    if (this.edgeCacheKey !== edgeKey) {
-      // Each source fans an edge to every one of its documents, so the ink piles
-      // up with the corpus. Left fixed, 6.5k overlapping strokes swamp the dots;
-      // hold the total roughly constant instead.
-      const ink = Math.min(0.16, Math.max(0.03, (0.16 * 1200) / Math.max(1, this.nodes.length)));
-      const laneMap = new Map();
-      const laneFor = (style, thick) => {
-        const key = `${style}|${thick}`;
-        let lane = laneMap.get(key);
-        if (!lane) {
-          lane = { path: new Path2D(), style, thick };
-          laneMap.set(key, lane);
-        }
-        return lane;
-      };
-      // The topic mesh is 9k chords at full corpus — noise, not information.
-      // Above the budget it is reserved for whatever the reader selected.
-      const showEveryTopicEdge = this.nodes.length <= TOPIC_EDGE_BUDGET;
+    const radius = this.radius || 400;
+    const BANDS = 6;
+    const lineScale = this.transform.scale ** 0.25;
 
+    // Core glow, so the middle of the orb reads as dense rather than merely
+    // crowded.
+    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+    glow.addColorStop(0, 'rgba(126,205,235,0.20)');
+    glow.addColorStop(0.55, 'rgba(96,150,205,0.06)');
+    glow.addColorStop(1, 'rgba(96,150,205,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mesh, banded by depth: one Path2D per band keeps this to six strokes for
+    // thirteen thousand segments.
+    const meshPaths = [];
+    for (let index = 0; index < BANDS; index += 1) meshPaths.push(new Path2D());
+    for (const link of this.mesh || []) {
+      const a = link[0];
+      const b = link[1];
+      const depth = (a.near + b.near) / 2;
+      if (depth < 0.18) continue;
+      const band = Math.min(BANDS - 1, Math.max(0, Math.floor(depth * BANDS)));
+      meshPaths[band].moveTo(a.sx, a.sy);
+      meshPaths[band].lineTo(b.sx, b.sy);
+    }
+    for (let index = 0; index < BANDS; index += 1) {
+      const depth = (index + 0.5) / BANDS;
+      ctx.strokeStyle = `rgba(132,184,228,${(selected ? 0.012 : 0.028) + depth * (selected ? 0.03 : 0.085)})`;
+      ctx.lineWidth = (0.3 + depth * 0.55) / lineScale;
+      ctx.stroke(meshPaths[index]);
+    }
+
+    // The corpus' real edges are hub-and-spoke, so they only earn ink when the
+    // reader has actually picked something.
+    if (selected) {
+      const path = new Path2D();
       for (const edge of this.edges) {
-        const source = this.nodeMap.get(edge.source);
-        const target = this.nodeMap.get(edge.target);
-        if (!source || !target) continue;
-        const linked = Boolean(selected) && connected.has(source.id) && connected.has(target.id);
-        const isTopic = edge.kind === 'topic';
-        if (isTopic && !showEveryTopicEdge && !linked) continue;
-
-        const bright = !selected || linked;
-        let lane;
-        if (isTopic) {
-          lane = laneFor(linked ? 'rgba(139,147,184,0.3)' : 'rgba(139,147,184,0.05)', linked);
-        } else {
-          // Carry the source's own hue. A single cyan for every fan repainted
-          // the smaller wedges in the largest category's colour.
-          const base = source.kind === 'source'
-            ? SOURCE_COLORS[source.source_type] || '#7f8c95'
-            : '#53d9e5';
-          lane = laneFor(withAlpha(base, bright ? ink : ink * 0.16), bright);
-        }
-        lane.path.moveTo(source.x, source.y);
-        if (isTopic) {
-          // Bow topic links towards the centre; straight chords would rake
-          // across the document arcs and rebuild the hairball.
-          lane.path.quadraticCurveTo((source.x + target.x) * 0.22, (source.y + target.y) * 0.22, target.x, target.y);
-        } else {
-          lane.path.lineTo(target.x, target.y);
-        }
+        const a = this.nodeMap.get(edge.source);
+        const b = this.nodeMap.get(edge.target);
+        if (!a || !b || !connected.has(a.id) || !connected.has(b.id)) continue;
+        path.moveTo(a.sx, a.sy);
+        path.lineTo(b.sx, b.sy);
       }
-
-      this.edgeLanes = [...laneMap.values()];
-      this.edgeCacheKey = edgeKey;
+      ctx.strokeStyle = 'rgba(83,217,229,0.5)';
+      ctx.lineWidth = 1.1 / lineScale;
+      ctx.stroke(path);
     }
 
-    // Line width tracks zoom, so it is applied at draw time, not bake time.
-    const thin = 0.35 / this.transform.scale ** 0.25;
-    const thick = 0.75 / this.transform.scale ** 0.25;
-    for (const lane of this.edgeLanes || []) {
-      ctx.strokeStyle = lane.style;
-      ctx.lineWidth = lane.thick ? thick : thin;
-      ctx.stroke(lane.path);
-    }
-
-    // A slow ring sweeping outwards from the root, brightening the nodes it
-    // crosses — the retrieval pass made visible.
-    const pulseOrbit = this.reducedMotion ? -1 : this.pulse * (this.maxOrbit || 0) * 1.05;
-    if (pulseOrbit > 0) {
-      ctx.beginPath();
-      ctx.ellipse(0, 0, pulseOrbit, pulseOrbit * FLATTEN, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(83,217,229,${0.16 * (1 - this.pulse)})`;
-      ctx.lineWidth = 1.1 / this.transform.scale ** 0.25;
-      ctx.stroke();
-    }
-
-    const colorOf = (node) => (node.kind === 'topic'
-      ? TOPIC_COLOR
-      : node.kind === 'root'
-        ? '#ffffff'
-        : SOURCE_COLORS[node.source_type] || '#7f8c95');
-    const radiusOf = (node) => {
-      // Swell briefly as the pulse ring passes over this orbit.
-      const wake = pulseOrbit > 0 ? Math.max(0, 1 - Math.abs(node.orbit - pulseOrbit) / 44) : 0;
-      return { radius: this.nodeRadius(node) * (1 + wake * 0.3), wake };
-    };
-
-    // Plain dots are grouped by fill and opacity so the bulk of the corpus costs
-    // one fill() per group. Anything that needs a glow, a ring or a label is
-    // rare enough to draw on its own afterwards.
+    // Dots, grouped by colour and depth band so the far side of the orb is
+    // drawn first and reads as further away.
     const groups = new Map();
     const standouts = [];
     for (const node of this.nodes) {
       const isSelected = node.id === selected;
       const isHovered = node.id === this.hoveredNodeId;
-      const ringed = node.status === 'warning' || node.status === 'review' || node.editable;
-      if (isSelected || isHovered || ringed || node.kind !== 'document') {
+      if (isSelected || isHovered || node.kind !== 'document') {
         standouts.push(node);
         continue;
       }
-      const color = colorOf(node);
-      const alpha = selected && !connected.has(node.id) ? 0.18 : node.status === 'repealed' ? 0.42 : 0.92;
-      const key = `${color}|${alpha}`;
+      const band = Math.min(BANDS - 1, Math.max(0, Math.floor(node.near * BANDS)));
+      const colour = SOURCE_COLORS[node.source_type] || '#7f8c95';
+      const key = `${colour}|${band}`;
       let group = groups.get(key);
       if (!group) {
-        group = { path: new Path2D(), color, alpha };
+        group = { path: new Path2D(), colour, band, repealed: 0 };
         groups.set(key, group);
       }
-      const { radius } = radiusOf(node);
-      group.path.moveTo(node.x + radius, node.y);
-      group.path.arc(node.x, node.y, radius, 0, Math.PI * 2);
+      const size = this.nodeRadius(node) * (0.3 + node.near * 0.5);
+      group.path.moveTo(node.sx + size, node.sy);
+      group.path.arc(node.sx, node.sy, size, 0, Math.PI * 2);
     }
 
     ctx.shadowBlur = 0;
-    for (const group of groups.values()) {
-      ctx.globalAlpha = group.alpha;
-      ctx.fillStyle = group.color;
+    ctx.globalCompositeOperation = 'lighter';
+    const ordered = [...groups.values()].sort((a, b) => a.band - b.band);
+    for (const group of ordered) {
+      const depth = (group.band + 0.5) / BANDS;
+      ctx.globalAlpha = selected ? 0.16 : 0.22 + depth * 0.5;
+      ctx.fillStyle = group.colour;
       ctx.fill(group.path);
     }
+    ctx.globalCompositeOperation = 'source-over';
 
     for (const node of standouts) {
-      const color = colorOf(node);
       const isSelected = node.id === selected;
       const isHovered = node.id === this.hoveredNodeId;
-      const dimmed = selected && !connected.has(node.id);
-      const { radius, wake } = radiusOf(node);
-      ctx.globalAlpha = dimmed ? 0.18 : node.status === 'repealed' ? 0.42 : 0.92;
-      if (isSelected || isHovered || node.kind === 'root' || wake > 0.05) {
-        ctx.shadowColor = color;
-        ctx.shadowBlur = isSelected ? 18 : isHovered || node.kind === 'root' ? 10 : wake * 9;
+      const colour = node.kind === 'topic'
+        ? TOPIC_COLOR
+        : node.kind === 'root'
+          ? '#ffffff'
+          : SOURCE_COLORS[node.source_type] || '#7f8c95';
+      const size = this.nodeRadius(node) * (0.6 + node.near * 0.8);
+      ctx.globalAlpha = selected && !connected.has(node.id) && node.kind === 'document'
+        ? 0.25
+        : 0.4 + node.near * 0.6;
+      if (isSelected || isHovered || node.kind === 'root') {
+        ctx.shadowColor = colour;
+        ctx.shadowBlur = isSelected ? 20 : 11;
       } else {
         ctx.shadowBlur = 0;
       }
       ctx.beginPath();
-      ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = color;
+      ctx.arc(node.sx, node.sy, size, 0, Math.PI * 2);
+      ctx.fillStyle = colour;
       ctx.fill();
       if (node.status === 'warning' || node.status === 'review') {
         ctx.strokeStyle = '#ffb248';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      }
-      if (node.editable) {
-        ctx.strokeStyle = '#ff78b7';
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = 1.4;
         ctx.stroke();
       }
       ctx.shadowBlur = 0;
-      const showLabel = node.kind !== 'document' || isSelected || isHovered;
-      if (showLabel) {
-        const label = node.label.length > 54 ? `${node.label.slice(0, 51)}…` : node.label;
+
+      if (node.kind !== 'document' || isSelected || isHovered) {
+        const label = node.label.length > 46 ? `${node.label.slice(0, 43)}…` : node.label;
         ctx.font = `${node.kind === 'root' ? 700 : 500} ${node.kind === 'document' ? 8 : 9}px Cascadia Mono, Consolas, monospace`;
         ctx.fillStyle = isSelected || isHovered ? '#ffffff' : '#c2cbd0';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(label, node.x + radius + 5, node.y);
+        ctx.fillText(label, node.sx + size + 5, node.sy);
       }
     }
+
     ctx.globalAlpha = 1;
     ctx.restore();
   }
