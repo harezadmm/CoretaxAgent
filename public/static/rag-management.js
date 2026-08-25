@@ -129,6 +129,7 @@ class RagGraph {
     this.pitch = 0.34;
     this.reducedMotion = false;
     this.onScreen = true;
+    this.pointerInside = false;
     this.transform = { x: 0, y: 0, scale: 1 };
     this.pointer = null;
     this.controller = new AbortController();
@@ -144,7 +145,11 @@ class RagGraph {
     this.canvas.addEventListener('pointermove', (event) => this.pointerMove(event), { signal });
     this.canvas.addEventListener('pointerup', (event) => this.pointerUp(event), { signal });
     this.canvas.addEventListener('pointercancel', () => { this.pointer = null; }, { signal });
+    this.canvas.addEventListener('pointerenter', () => {
+      this.pointerInside = true;
+    }, { signal });
     this.canvas.addEventListener('pointerleave', () => {
+      this.pointerInside = false;
       if (!this.pointer && this.hoveredNodeId) {
         this.hoveredNodeId = null;
         this.render();
@@ -351,9 +356,9 @@ class RagGraph {
       // minute, which reads as a still image.
       const delta = Math.min(0.05, (now - this.lastFrame) / 1000);
       this.lastFrame = now;
-      // Hold still while the reader is dragging, so their rotation is the only
-      // motion they have to track.
-      if (!this.pointer) this.yaw += ROTATION_RATE * delta;
+      // Hold still while the reader is dragging or has the cursor over the orb:
+      // you cannot click a target that is walking away from the pointer.
+      if (!this.pointer && !this.pointerInside) this.yaw += ROTATION_RATE * delta;
       this.project();
       this.pulse = (elapsed % PULSE_PERIOD) / PULSE_PERIOD;
       this.render();
@@ -446,7 +451,10 @@ class RagGraph {
     const dy = event.clientY - this.pointer.lastY;
     this.pointer.lastX = event.clientX;
     this.pointer.lastY = event.clientY;
-    if (Math.hypot(event.clientX - this.pointer.startX, event.clientY - this.pointer.startY) > 4) {
+    // 4px used to be the budget, which a hand chasing a turning orb blows
+    // through every time — the click then registered as a rotate and the
+    // document never opened.
+    if (Math.hypot(event.clientX - this.pointer.startX, event.clientY - this.pointer.startY) > 11) {
       this.pointer.moved = true;
     }
 
