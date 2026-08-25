@@ -179,10 +179,14 @@ class RagGraph {
   }
 
   resize() {
-    const box = this.canvas.parentElement.getBoundingClientRect();
+    const parent = this.canvas.parentElement;
+    // offsetWidth is the layout size in CSS pixels. getBoundingClientRect()
+    // reports the size *after* the shell's zoom, and feeding that back into
+    // style.width gets zoomed a second time — each ResizeObserver pass grew the
+    // canvas again until allocation failed and the panel went blank white.
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    const width = Math.max(320, Math.floor(box.width));
-    const height = Math.max(360, Math.floor(box.height));
+    const width = Math.max(320, Math.min(6000, parent.offsetWidth || 320));
+    const height = Math.max(360, Math.min(6000, parent.offsetHeight || 360));
     this.canvas.width = Math.floor(width * ratio);
     this.canvas.height = Math.floor(height * ratio);
     this.canvas.style.width = `${width}px`;
@@ -317,21 +321,41 @@ class RagGraph {
         source.clusterX = cluster.cx;
         source.clusterY = cluster.cy;
       }
-      cluster.docs.forEach((node, index) => {
-        // Sunflower placement spaces a disc evenly by construction. The jitter
-        // is deliberately tiny: scaling the radius by a hash, as an earlier
-        // version did, destroyed that spacing and left dots 0.2px apart.
+      // Break the cluster into lobes. A sunflower disc is even by construction,
+      // which is precisely what made the previous layout look machine-made: no
+      // amount of jitter rescues a shape whose outline is a perfect circle.
+      const lobeCount = Math.max(1, Math.min(7, Math.round(Math.sqrt(cluster.docs.length) / 9)));
+      const lobes = [];
+      for (let index = 0; index < lobeCount; index += 1) {
+        const hash = hashNumber(`${cluster.type}:lobe:${index}`);
+        const angle = ((hash % 3600) / 3600) * Math.PI * 2;
+        const reach = (0.12 + ((hash >>> 12) % 100) / 150) * cluster.radius;
+        lobes.push({
+          x: cluster.cx + Math.cos(angle) * reach,
+          y: cluster.cy + Math.sin(angle) * reach * 0.9,
+          weight: 0.55 + ((hash >>> 5) % 100) / 110,
+        });
+      }
+      const totalWeight = lobes.reduce((sum, lobe) => sum + lobe.weight, 0);
+      for (const lobe of lobes) {
+        lobe.radius = Math.sqrt(lobe.weight / totalWeight) * cluster.radius * 1.05;
+      }
+
+      cluster.docs.forEach((node) => {
         const hash = hashNumber(node.id);
-        const t = (index + 0.5) / cluster.docs.length;
-        const angle = index * 2.399963;
-        const radius = Math.sqrt(t) * cluster.radius;
-        // Jitter in pixels, not radians. An angular wobble of the same nominal
-        // size throws points 36px sideways at the rim and lands them on top of
-        // their neighbours, which is what the seed spacing was losing to.
-        node.x = cluster.cx + Math.cos(angle) * radius + ((hash % 40) / 10 - 2);
-        node.y = cluster.cy + Math.sin(angle) * radius * 0.92 + (((hash >>> 7) % 40) / 10 - 2);
-        node.clusterX = cluster.cx;
-        node.clusterY = cluster.cy;
+        const lobe = lobes[hash % lobes.length];
+        const spread = ((hash >>> 3) % 1000) / 1000;
+        const angle = (((hash >>> 11) % 3600) / 3600) * Math.PI * 2;
+        // Two harmonics on the reach give the lobe a ragged edge instead of a
+        // rim; the union of several such lobes is what reads as organic.
+        const wobble = 1 + 0.26 * Math.sin(angle * 3 + lobe.x * 0.01) + 0.16 * Math.sin(angle * 5 + lobe.y * 0.01);
+        const radius = Math.sqrt(spread) * lobe.radius * wobble;
+        node.x = lobe.x + Math.cos(angle) * radius;
+        node.y = lobe.y + Math.sin(angle) * radius * 0.9;
+        // Gravity aims at the lobe, not the cluster centre, so relaxation keeps
+        // the lumpy outline instead of rounding it back into a disc.
+        node.clusterX = lobe.x;
+        node.clusterY = lobe.y;
       });
     }
 
@@ -430,7 +454,16 @@ class RagGraph {
             const dx = node.x - other.x;
             const dy = node.y - other.y;
             const sq = dx * dx + dy * dy;
-            if (sq > CELL * CELL || sq === 0) continue;
+            if (sq > CELL * CELL) continue;
+            if (sq === 0) {
+              // Exactly coincident. Skipping the pair, as this used to, leaves
+              // them welded together forever because the push direction is
+              // undefined; nudge each along its own hashed bearing instead.
+              const bearing = (hashNumber(node.id) % 628) / 100;
+              node.vx += Math.cos(bearing) * CELL * 0.3 * alpha;
+              node.vy += Math.sin(bearing) * CELL * 0.3 * alpha;
+              continue;
+            }
             const distance = Math.sqrt(sq);
             const push = ((CELL - distance) / distance) * 0.28 * alpha;
             node.vx += dx * push;
