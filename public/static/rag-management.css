@@ -100,7 +100,10 @@
   /* Fill exactly what is left below the header stack so the workspace never
      needs scrolling to be seen whole. Viewport units ignore the zoom applied
      for --ui-scale, so divide it back out. */
-  height:calc((100vh - 372px) / var(--ui-scale,1));
+  /* The drag handle overrides --rag-workspace-height. Driving the same
+     declaration that already wins avoids fighting grid track sizing, which
+     ignored an inline height on this item. */
+  height:var(--rag-workspace-height, calc((100vh - 372px) / var(--ui-scale,1)));
   min-height:430px;
   border:1px solid #273139;
   border-radius:9px;
@@ -912,3 +915,18 @@
 @media(prefers-reduced-motion:reduce){
   .rag-spinner{animation-duration:.01ms;animation-iteration-count:1}
 }
+
+/* Drag handle on the workspace's bottom edge */
+.rag-workspace{ border-bottom-left-radius:0; border-bottom-right-radius:0; }
+.rag-resize-handle{
+  display:flex; align-items:center; justify-content:center;
+  height:15px; margin-top:-1px;
+  border:1px solid #273139; border-top:0; border-radius:0 0 9px 9px;
+  background:linear-gradient(180deg,#0d1216,#090c0f);
+  cursor:ns-resize; touch-action:none; user-select:none;
+}
+.rag-resize-handle span{ display:block; width:46px; height:3px; border-radius:2px; background:#3b4750; transition:background .15s,width .15s; }
+.rag-resize-handle:hover span,.rag-resize-handle:focus-visible span{ width:70px; background:var(--cyan,#52d7e8); }
+.rag-resize-handle:focus-visible{ outline:1px solid var(--cyan,#52d7e8); outline-offset:1px; }
+.rag-resize-handle.dragging{ border-color:#3d5960; }
+.rag-resize-handle.dragging span{ width:70px; background:var(--cyan,#52d7e8); }

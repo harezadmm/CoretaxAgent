@@ -885,6 +885,7 @@ function shellMarkup(capabilities) {
         <section class="rag-inspector" aria-live="polite"><div class="rag-inspector-empty"><span>✦</span><strong>Pilih sebuah node</strong><p>Detail sumber, status, chunk, dan aksi pengelolaan akan tampil di sini.</p></div></section>
       </aside>
     </div>
+    <div class="rag-resize-handle" data-rag-resize role="separator" aria-orientation="horizontal" tabindex="0" title="Tarik untuk memperbesar · klik ganda untuk kembalikan" aria-label="Ubah tinggi workspace"><span></span></div>
     <dialog class="rag-dialog" data-rag-dialog="editor" aria-labelledby="rag-editor-heading">
       <form class="rag-editor-form" method="dialog" id="rag-editor-form">
         <div class="rag-dialog-head"><div><p class="panel-kicker">OPERATOR MEMORY</p><h3 id="rag-editor-heading" data-rag-editor-title>Tambah memory RAG</h3></div><button type="button" data-rag-action="close-editor" aria-label="Tutup">×</button></div>
@@ -895,6 +896,76 @@ function shellMarkup(capabilities) {
     </dialog>
     <dialog class="rag-dialog rag-confirm-dialog" data-rag-dialog="delete" aria-labelledby="rag-delete-heading"><form method="dialog"><span class="rag-danger-icon">!</span><h3 id="rag-delete-heading">Hapus memory dari RAG?</h3><p>Dokumen akan dipindahkan ke folder trash dan langsung dikeluarkan dari retrieval AI.</p><div class="rag-dialog-actions"><span></span><div><button class="rag-ghost-button" value="cancel">Batal</button><button class="rag-danger-button" value="confirm">Pindahkan ke trash</button></div></div></form></dialog>
   </section>`;
+}
+
+const WORKSPACE_HEIGHT_KEY = 'coretax.ragWorkspaceHeight';
+const WORKSPACE_MIN = 380;
+const WORKSPACE_MAX = 2600;
+
+/** Current shell zoom, so pointer deltas can be converted to layout pixels. */
+function uiScale() {
+  const value = Number(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale'));
+  return Number.isFinite(value) && value > 0 ? value : 1;
+}
+
+/**
+ * Drag the bottom edge to give the graph more room; double-click to hand the
+ * height back to the stylesheet.
+ */
+function bindResizeHandle(root) {
+  const workspace = root.querySelector('.rag-workspace');
+  const handle = root.querySelector('[data-rag-resize]');
+  if (!workspace || !handle) return;
+
+  const apply = (height) => {
+    const next = Math.round(Math.min(WORKSPACE_MAX, Math.max(WORKSPACE_MIN, height)));
+    // Set the variable the stylesheet reads rather than an inline height: as a
+    // grid item the workspace ignored the inline value entirely.
+    document.documentElement.style.setProperty('--rag-workspace-height', `${next}px`);
+  };
+
+  const stored = Number(window.localStorage.getItem(WORKSPACE_HEIGHT_KEY));
+  if (Number.isFinite(stored) && stored >= WORKSPACE_MIN) apply(stored);
+
+  let origin = null;
+
+  handle.addEventListener('pointerdown', (event) => {
+    // offsetHeight, not the bounding rect: the rect is post-zoom, and feeding
+    // that back into a CSS pixel height compounds the scale on every drag.
+    origin = { y: event.clientY, height: workspace.offsetHeight, scale: uiScale() };
+    handle.setPointerCapture(event.pointerId);
+    handle.classList.add('dragging');
+    event.preventDefault();
+  });
+
+  handle.addEventListener('pointermove', (event) => {
+    if (!origin) return;
+    apply(origin.height + (event.clientY - origin.y) / origin.scale);
+  });
+
+  const finish = (event) => {
+    if (!origin) return;
+    origin = null;
+    handle.classList.remove('dragging');
+    if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+    window.localStorage.setItem(WORKSPACE_HEIGHT_KEY, String(workspace.offsetHeight));
+  };
+  handle.addEventListener('pointerup', finish);
+  handle.addEventListener('pointercancel', finish);
+
+  handle.addEventListener('dblclick', () => {
+    document.documentElement.style.removeProperty('--rag-workspace-height');
+    window.localStorage.removeItem(WORKSPACE_HEIGHT_KEY);
+  });
+
+  handle.addEventListener('keydown', (event) => {
+    const step = event.shiftKey ? 120 : 40;
+    if (event.key === 'ArrowDown') apply(workspace.offsetHeight + step);
+    else if (event.key === 'ArrowUp') apply(workspace.offsetHeight - step);
+    else return;
+    window.localStorage.setItem(WORKSPACE_HEIGHT_KEY, String(workspace.offsetHeight));
+    event.preventDefault();
+  });
 }
 
 export function mountRagManagement(root, notify = () => {}) {
@@ -1245,6 +1316,7 @@ export function mountRagManagement(root, notify = () => {}) {
     state.graph = null;
     root.innerHTML = shellMarkup(state.capabilities);
     bindWorkspace();
+    bindResizeHandle(root);
     await reloadData();
   };
 
