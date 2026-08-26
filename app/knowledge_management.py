@@ -640,6 +640,7 @@ class KnowledgeManager:
 
         emitted = 0
         ordinal: dict[str, int] = {}
+        doc_number = {record.id: number for number, record in enumerate(records, 1)}
         for index, chunk in interleaved:
             if emitted >= limit:
                 break
@@ -651,12 +652,20 @@ class KnowledgeManager:
             # labels are what made the chunk graph unreadable: selecting one dot
             # lit a twin elsewhere and looked like the graph jumping. Number each
             # chunk within its own document so every dot names itself.
+            # The suffix has to be applied *after* truncation. Numbering first
+            # and cutting to 60 characters afterwards threw the number away on
+            # every long regulation title, so 414 distinct chunks came back
+            # sharing one 60-character prefix. The document number keeps the
+            # label unique even when two regulations truncate identically.
             ordinal[record.id] = ordinal.get(record.id, 0) + 1
-            label = f"{record.title} §{ordinal[record.id]}"
+            suffix = f" #{doc_number.get(record.id, 0)}·{ordinal[record.id]}"
+            title = record.title
+            if len(title) + len(suffix) > 60:
+                title = title[: 60 - len(suffix) - 1].rstrip() + "…"
             nodes.append(
                 KnowledgeGraphNode(
                     id=f"c{index}",
-                    label=label[:60],
+                    label=f"{title}{suffix}",
                     kind="chunk",
                     source_type=record.source_type,
                     status=record.status,
