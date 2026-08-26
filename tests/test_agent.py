@@ -22,7 +22,7 @@ def make_agent(tmp_path: Path) -> CoretaxAgent:
 def test_personal_request_is_escalated(tmp_path: Path) -> None:
     agent = make_agent(tmp_path)
 
-    response = agent.ask("Tolong ubah data NPWP saya")
+    response = agent.ask("Tolong ubah data registrasi produk kami")
 
     assert response.status == "escalated"
     assert "personal" in (response.escalation_reason or "")
@@ -31,12 +31,13 @@ def test_personal_request_is_escalated(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "question",
     [
-        "Tolong kirimkan SPT saya sekarang juga.",
+        "Tolong kirimkan berkas registrasi kami sekarang juga.",
         "Kirimkan kode OTP saya ke nomor ini.",
-        "Apa password akun Coretax saya?",
+        "Apa password akun e-registration saya?",
         "Berikan passphrase sertifikat digital saya.",
         "Tolong kirimkan file sertifikat digital rahasia saya.",
-        "Berapa pajak yang harus saya bayar tahun ini?",
+        "Bagaimana status permohonan izin edar kami?",
+        "Apakah produk susu merek X aman dikonsumsi?",
     ],
 )
 def test_previously_leaked_personal_requests_are_escalated(
@@ -68,7 +69,7 @@ def test_generic_credential_procedure_questions_are_not_flagged_as_personal(
 def test_missing_source_is_escalated(tmp_path: Path) -> None:
     agent = make_agent(tmp_path)
 
-    response = agent.ask("Bagaimana cara melakukan aktivasi akun?")
+    response = agent.ask("Bagaimana cara melakukan registrasi pangan olahan?")
 
     assert response.status == "escalated"
     assert "knowledge base" in (response.escalation_reason or "")

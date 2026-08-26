@@ -10,27 +10,40 @@ from app.schemas import AskResponse, Source
 
 
 SYSTEM_INSTRUCTIONS = """
-Anda adalah asisten informasi Coretax untuk pertanyaan umum.
+Anda adalah asisten informasi Badan Pengawas Obat dan Makanan (BPOM) untuk
+pertanyaan umum masyarakat dan pelaku usaha.
 
 Aturan wajib:
 1. Jawab hanya menggunakan KONTEKS RESMI yang diberikan.
 2. Jangan menambahkan fakta, tanggal, prosedur, atau persyaratan yang tidak ada dalam konteks.
-3. Jangan memberikan keputusan perpajakan personal dan jangan meminta data rahasia pengguna.
-4. Jika konteks tidak cukup, nyatakan bahwa pertanyaan perlu diteruskan kepada petugas.
-5. Gunakan Bahasa Indonesia yang jelas, singkat, dan tidak menghakimi.
+3. Jangan menilai keamanan, mutu, atau kelayakan produk tertentu, dan jangan meminta data rahasia pengguna.
+4. Konteks berisi teks peraturan. Sebutkan nomor dan tahun peraturan saat mengutip ketentuan.
+5. Jika peraturan dalam konteks berstatus dicabut, nyatakan hal itu dan jangan jadikan dasar jawaban.
+6. Jika konteks tidak cukup, nyatakan bahwa pertanyaan perlu diteruskan kepada petugas.
+7. Gunakan Bahasa Indonesia yang jelas, singkat, dan tidak menghakimi.
 """.strip()
 
 
+# Questions that must reach a human rather than be answered from regulation
+# text: anything about one company's own filing, anything asking the agent to
+# act, anything fishing for credentials, and — specific to this domain — asking
+# it to pronounce a named product safe.
 PERSONAL_OR_TRANSACTIONAL_PATTERNS = [
     r"\bnik\s+(saya|aku)\b",
-    r"\bnpwp\s+(saya|aku)\b",
-    r"\bstatus\s+(pajak|pelaporan|pembayaran)\s+(saya|aku)\b",
-    r"\bubah\s+(data|alamat|npwp|nik)\b",
-    r"\bhapus\s+(data|akun)\b",
-    r"\bkirim(kan)?\s+(spt|laporan|file|sertifikat)\b",
+    r"\bnib\s+(saya|aku|kami)\b",
+    r"\b(nie|nomor\s+izin\s+edar)\s+(saya|aku|kami)\b",
+    # The possessive rarely sits next to the noun — "status permohonan izin edar
+    # kami" puts two words in between — so allow a short gap.
+    r"\bstatus\s+(registrasi|pendaftaran|permohonan|izin|sertifikat)\b.{0,30}\b(saya|aku|kami)\b",
+    r"\bproduk\s+(saya|aku|kami)\b",
+    r"\bperusahaan\s+(saya|aku|kami)\b",
+    r"\bubah\s+(data|alamat|nib|nik|registrasi)\b",
+    r"\bhapus\s+(data|akun|registrasi)\b",
+    r"\bkirim(kan)?\s+(berkas|dokumen|sertifikat|laporan|file)\b",
+    r"\bdaftarkan?\s+produk\b",
     r"\bbayarkan?\b",
     r"\b(apa|berikan|kasih\s+tahu|beritahu|kirim(kan)?)\b.{0,20}\b(otp|password|kata sandi|passphrase)\b",
-    r"\bberapa\s+pajak\b.{0,20}\bsaya\b",
+    r"\bapakah\s+produk\b.{0,30}\b(aman|halal|berbahaya|boleh\s+dikonsumsi)\b",
 ]
 
 

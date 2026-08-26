@@ -4,8 +4,8 @@ const TOKEN_STORAGE_KEY = 'coretax.ragAdminToken';
 const GRAPH_LIMIT = 20000;
 
 const SOURCE_LABELS = {
-  official_regulation: 'Regulasi DJP',
-  official_html: 'Coretaxpedia',
+  official_regulation: 'Peraturan BPOM',
+  official_html: 'Artikel resmi',
   official_pdf: 'Manual resmi',
   curated: 'Knowledge terkurasi',
   curated_official_synthesis: 'Knowledge terkurasi',
