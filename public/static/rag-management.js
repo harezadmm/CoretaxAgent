@@ -383,18 +383,14 @@ class RagGraph {
       // minute, which reads as a still image.
       const delta = Math.min(0.05, (now - this.lastFrame) / 1000);
       this.lastFrame = now;
-      // Never stop outright. With 6.5k dots filling the orb, "the cursor is on
-      // a dot" is very nearly "the cursor is over the canvas", so pausing on
-      // hover froze the animation exactly as pausing on the whole canvas did.
-      // Crawl instead, which keeps a hovered dot catchable without the graph
-      // ever looking dead.
-      // Hold still once something is selected. Hovering only slowed the spin to
-      // 15%, so between the click and the detail panel loading the chosen node
-      // drifted away from the cursor — the selection was correct but its label
-      // and link surfaced somewhere else, which reads as the graph jumping to a
-      // different node.
-      if (!this.pointer && !this.selectedNodeId) {
-        this.yaw += ROTATION_RATE * (this.hoveredNodeId ? 0.15 : 1) * delta;
+      // Stop dead on a hovered dot rather than crawling at 15%. A crawl still
+      // walks the dot out from under a hand that takes half a second to decide,
+      // and the reader lands on its neighbour. Freezing is self-stabilising:
+      // the dot stays put, so hover holds, so the orb stays still until the
+      // cursor actually leaves — no on/off stutter. Motion resumes the moment
+      // hover is lost, and holds while something is selected.
+      if (!this.pointer && !this.selectedNodeId && !this.hoveredNodeId) {
+        this.yaw += ROTATION_RATE * delta;
       }
       this.project();
       this.pulse = (elapsed % PULSE_PERIOD) / PULSE_PERIOD;
@@ -447,16 +443,26 @@ class RagGraph {
     return Math.max(2.4, 1.6 + Number(node.size || 1) * 0.72);
   }
 
+  /**
+   * Radius within which a dot answers the pointer. 1.8x the dot plus slack
+   * dates from when each dot wore a 3.2x glow. The glow is gone, and at eight
+   * thousand packed dots that reach swept in a crowd of neighbours, so it now
+   * tracks the drawn dot closely.
+   */
+  hitRadius(node) {
+    const size = this.nodeRadius(node) * (0.5 + node.near * 0.7);
+    return size * 1.15 + 3 / this.transform.scale;
+  }
+
+  covers(node, point) {
+    return Math.hypot(point.x - node.sx, point.y - node.sy) <= this.hitRadius(node);
+  }
+
   hitTest(point) {
     let best = null;
     let bestScore = -1;
-    // 1.8x the dot plus slack dates from when each dot wore a 3.2x glow. The
-    // glow is gone, and at eight thousand packed dots that reach swept in a
-    // crowd of neighbours, so it now tracks the drawn dot closely.
-    const slack = 3 / this.transform.scale;
     for (const node of this.nodes) {
-      const size = this.nodeRadius(node) * (0.5 + node.near * 0.7);
-      const radius = size * 1.15 + slack;
+      const radius = this.hitRadius(node);
       const distance = Math.hypot(point.x - node.sx, point.y - node.sy);
       if (distance > radius) continue;
       // Depth decides. Weighting centrality at 45% let a dot sitting behind
@@ -474,7 +480,15 @@ class RagGraph {
 
   pointerDown(event) {
     const point = this.worldFromPointer(event);
-    const node = this.hitTest(point);
+    // Aim at what the reader can see. hoveredNodeId is the dot drawn lit and
+    // labelled; asking hitTest a second time at press-time asked the question
+    // again of a sphere that had turned in between, so the click selected a
+    // neighbour of the labelled dot. That mismatch is the graph "jumping".
+    // Fall back to a fresh pick for touch, which never hovers.
+    const lit = this.hoveredNodeId
+      ? this.nodes.find((candidate) => candidate.id === this.hoveredNodeId)
+      : null;
+    const node = lit && this.covers(lit, point) ? lit : this.hitTest(point);
     // Shift, the right button or the middle button pan the view; a plain drag
     // turns the orb. Panning used to be unreachable — every drag rotated.
     const panning = event.shiftKey || event.button === 1 || event.button === 2;
@@ -592,8 +606,17 @@ class RagGraph {
   }
 
   selectDocument(documentId) {
-    const node = this.nodes.find((entry) => entry.document_id === documentId);
-    this.selectedNodeId = node?.id || null;
+    // A click has already chosen one specific chunk. Re-resolving the document
+    // to its first matching node threw that away, and a regulation owns up to
+    // 171 chunks scattered right across the sphere — so the highlight and the
+    // label surfaced on a dot the reader never touched, half an orb away. That
+    // is the jump. Keep the chosen dot whenever it belongs to this document;
+    // only fall back to a lookup when the selection came from the list instead.
+    const current = this.nodes.find((entry) => entry.id === this.selectedNodeId);
+    if (!current || current.document_id !== documentId) {
+      const node = this.nodes.find((entry) => entry.document_id === documentId);
+      this.selectedNodeId = node?.id || null;
+    }
     this.render();
   }
 
