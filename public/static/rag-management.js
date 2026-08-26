@@ -278,8 +278,14 @@ class RagGraph {
    * once, because the positions only rotate afterwards.
    */
   buildMesh() {
-    const cell = Math.max(24, this.radius / 9);
-    const documents = this.nodes.filter((node) => node.kind === 'document');
+    const all = this.nodes.filter((node) => node.kind === 'document');
+    // Link a sparse sample, not every dot. A nearest-neighbour mesh over 20k
+    // packed nodes draws lines shorter than the dots at their ends — measured,
+    // the entire mesh lit one pixel on the canvas. Sampling spreads the
+    // endpoints far enough apart for the line between them to be seen.
+    const stride = Math.max(1, Math.round(all.length / 1200));
+    const documents = all.filter((_, index) => index % stride === 0);
+    const cell = Math.max(24, this.radius / 4);
     const buckets = new Map();
     for (const node of documents) {
       const id = `${Math.round(node.bx / cell)}:${Math.round(node.by / cell)}:${Math.round(node.bz / cell)}`;
@@ -294,9 +300,7 @@ class RagGraph {
     // thousand: the mesh alone costs a frame more than the dots do, and at that
     // density it reads as haze rather than structure. Thin it so the line count
     // stays flat as the corpus grows.
-    const stride = Math.max(1, Math.ceil(documents.length / 6000));
     for (let index = 0; index < documents.length; index += 1) {
-      if (index % stride !== 0) continue;
       const node = documents[index];
       const cx = Math.round(node.bx / cell);
       const cy = Math.round(node.by / cell);
@@ -631,12 +635,6 @@ class RagGraph {
       meshPaths[band].moveTo(a.sx, a.sy);
       meshPaths[band].lineTo(b.sx, b.sy);
     }
-    for (let index = 0; index < BANDS; index += 1) {
-      const depth = (index + 0.5) / BANDS;
-      ctx.strokeStyle = `rgba(132,184,228,${(selected ? 0.012 : 0.028) + depth * (selected ? 0.03 : 0.085)})`;
-      ctx.lineWidth = (0.3 + depth * 0.55) / lineScale;
-      ctx.stroke(meshPaths[index]);
-    }
 
     // The corpus' real edges are hub-and-spoke, so they only earn ink when the
     // reader has actually picked something.
@@ -688,7 +686,7 @@ class RagGraph {
       // washed-out the moment dots are large enough to overlap — and at twenty
       // thousand of them they always are. Depth is now carried almost entirely
       // by size, with only a slight fade left to it.
-      ctx.globalAlpha = selected ? 0.22 : 0.88 + depth * 0.12;
+      ctx.globalAlpha = selected ? 0.22 : 0.70 + depth * 0.22;
       ctx.fillStyle = group.colour;
       ctx.fill(group.path);
       // A dark rim separates overlapping dots — but only once they are big
@@ -703,6 +701,17 @@ class RagGraph {
         ctx.lineWidth = 1.1 / this.transform.scale;
         ctx.stroke(group.path);
       }
+    }
+
+    // Drawn over the dots, not under them. Underneath, twenty thousand opaque
+    // dots covered the sphere so completely that the mesh left two lit pixels
+    // on the whole canvas — no alpha would have rescued it.
+    ctx.globalAlpha = 1;
+    for (let index = 0; index < BANDS; index += 1) {
+      const depth = (index + 0.5) / BANDS;
+      ctx.strokeStyle = `rgba(163,209,245,${(selected ? 0.04 : 0.13) + depth * (selected ? 0.06 : 0.2)})`;
+      ctx.lineWidth = (0.4 + depth * 0.55) / lineScale;
+      ctx.stroke(meshPaths[index]);
     }
 
     for (const node of standouts) {
