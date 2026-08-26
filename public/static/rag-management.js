@@ -1,7 +1,9 @@
 const TOKEN_STORAGE_KEY = 'bpom.ragAdminToken';
-// Every document, not a sample. The renderer batches its draw calls so the full
-// corpus stays interactive; see render().
-const GRAPH_LIMIT = 20000;
+// A sample of the corpus, not all of it. 20k chunks packed the sphere solid:
+// there was no gap left between dots for a link to be drawn in, and the mesh
+// was invisible no matter what alpha it used. 8k keeps the cloud dense while
+// leaving the background visible through it.
+const GRAPH_LIMIT = 8000;
 
 const SOURCE_LABELS = {
   official_regulation: 'Peraturan BPOM',
@@ -283,7 +285,7 @@ class RagGraph {
     // packed nodes draws lines shorter than the dots at their ends — measured,
     // the entire mesh lit one pixel on the canvas. Sampling spreads the
     // endpoints far enough apart for the line between them to be seen.
-    const stride = Math.max(1, Math.round(all.length / 1200));
+    const stride = Math.max(1, Math.round(all.length / 1800));
     const documents = all.filter((_, index) => index % stride === 0);
     const cell = Math.max(24, this.radius / 4);
     const buckets = new Map();
@@ -709,8 +711,8 @@ class RagGraph {
     ctx.globalAlpha = 1;
     for (let index = 0; index < BANDS; index += 1) {
       const depth = (index + 0.5) / BANDS;
-      ctx.strokeStyle = `rgba(163,209,245,${(selected ? 0.04 : 0.13) + depth * (selected ? 0.06 : 0.2)})`;
-      ctx.lineWidth = (0.4 + depth * 0.55) / lineScale;
+      ctx.strokeStyle = `rgba(178,220,252,${(selected ? 0.05 : 0.22) + depth * (selected ? 0.08 : 0.33)})`;
+      ctx.lineWidth = (0.6 + depth * 0.9) / lineScale;
       ctx.stroke(meshPaths[index]);
     }
 
