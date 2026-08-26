@@ -450,17 +450,20 @@ class RagGraph {
   hitTest(point) {
     let best = null;
     let bestScore = -1;
-    const slack = 5 / this.transform.scale;
+    // 1.8x the dot plus slack dates from when each dot wore a 3.2x glow. The
+    // glow is gone, and at eight thousand packed dots that reach swept in a
+    // crowd of neighbours, so it now tracks the drawn dot closely.
+    const slack = 3 / this.transform.scale;
     for (const node of this.nodes) {
       const size = this.nodeRadius(node) * (0.5 + node.near * 0.7);
-      // Track the drawn dot, with enough margin that a near miss still counts.
-      const radius = size * 1.8 + slack;
+      const radius = size * 1.15 + slack;
       const distance = Math.hypot(point.x - node.sx, point.y - node.sy);
       if (distance > radius) continue;
-      // Balance "in front of everything else" against "actually under the
-      // cursor": depth alone let a near node win from the edge of its halo
-      // while a dot dead under the pointer lost.
-      const score = node.near * 0.55 + (1 - distance / radius) * 0.45;
+      // Depth decides. Weighting centrality at 45% let a dot sitting behind
+      // another win on being nearer the cursor's centre — so the click landed
+      // on something other than the dot the reader could actually see.
+      // Centrality survives only as a tiebreak between equally near dots.
+      const score = node.near * 0.94 + (1 - distance / radius) * 0.06;
       if (score > bestScore) {
         bestScore = score;
         best = node;
