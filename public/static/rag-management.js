@@ -684,11 +684,25 @@ class RagGraph {
     const ordered = [...groups.values()].sort((a, b) => a.band - b.band);
     for (const group of ordered) {
       const depth = (group.band + 0.5) / BANDS;
-      // Opaque, drawn back to front. 'lighter' was what turned overlapping dots
-      // into bloom in the first place.
-      ctx.globalAlpha = selected ? 0.22 : 0.62 + depth * 0.38;
+      // Drawn back to front. The alpha floor used to be 0.62, which reads as
+      // washed-out the moment dots are large enough to overlap — and at twenty
+      // thousand of them they always are. Depth is now carried almost entirely
+      // by size, with only a slight fade left to it.
+      ctx.globalAlpha = selected ? 0.22 : 0.88 + depth * 0.12;
       ctx.fillStyle = group.colour;
       ctx.fill(group.path);
+      // A dark rim separates overlapping dots — but only once they are big
+      // enough to have room for one. Fitted to the panel a dot is about two
+      // pixels across, and a rim there eats the dot instead of outlining it:
+      // it cost 30% of the lit pixels and dropped mean brightness from 224
+      // to 144. lineWidth is in world units, so divide by the zoom to keep it
+      // roughly one screen pixel.
+      if (this.transform.scale > 1.5) {
+        ctx.globalAlpha = selected ? 0.14 : 0.45 + depth * 0.3;
+        ctx.strokeStyle = '#05080b';
+        ctx.lineWidth = 1.1 / this.transform.scale;
+        ctx.stroke(group.path);
+      }
     }
 
     for (const node of standouts) {
