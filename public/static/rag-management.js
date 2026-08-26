@@ -388,7 +388,12 @@ class RagGraph {
       // hover froze the animation exactly as pausing on the whole canvas did.
       // Crawl instead, which keeps a hovered dot catchable without the graph
       // ever looking dead.
-      if (!this.pointer) {
+      // Hold still once something is selected. Hovering only slowed the spin to
+      // 15%, so between the click and the detail panel loading the chosen node
+      // drifted away from the cursor — the selection was correct but its label
+      // and link surfaced somewhere else, which reads as the graph jumping to a
+      // different node.
+      if (!this.pointer && !this.selectedNodeId) {
         this.yaw += ROTATION_RATE * (this.hoveredNodeId ? 0.15 : 1) * delta;
       }
       this.project();
