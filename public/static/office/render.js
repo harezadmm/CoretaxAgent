@@ -105,6 +105,142 @@ export function createRenderer(canvas, assets) {
     );
   }
 
+  /**
+   * Contact shadow. Without one, a sprite reads as pasted onto the floor rather
+   * than standing on it — the single cheapest thing that separates flat pixel
+   * art from art that sits in a room. Two stacked ellipses stand in for a soft
+   * edge; a real blur would fight `imageSmoothingEnabled = false`.
+   */
+  function drawShadow(worldX, worldY, radiusX, radiusY) {
+    const { x, y } = origin();
+    const cx = x + worldX * camera.scale;
+    const cy = y + worldY * camera.scale;
+    context.save();
+    context.fillStyle = '#000';
+    for (const [spread, alpha] of [[1.4, 0.13], [1, 0.2]]) {
+      context.globalAlpha = alpha;
+      context.beginPath();
+      context.ellipse(cx, cy, radiusX * camera.scale * spread, radiusY * camera.scale * spread, 0, 0, Math.PI * 2);
+      context.fill();
+    }
+    context.restore();
+  }
+
+  /** Ambient occlusion where a wall meets the floor, so the room has a corner. */
+  function drawWallBaseShade() {
+    const { x, y } = origin();
+    const band = TILE_SIZE * camera.scale * 0.55;
+    for (let row = 1; row < layout.rows; row += 1) {
+      for (let col = 0; col < layout.cols; col += 1) {
+        const tile = tileAt(layout, col, row);
+        if (tile === TILE.VOID || tile === TILE.WALL) continue;
+        if (tileAt(layout, col, row - 1) !== TILE.WALL) continue;
+        const px = x + col * TILE_SIZE * camera.scale;
+        const py = y + row * TILE_SIZE * camera.scale;
+        const shade = context.createLinearGradient(0, py, 0, py + band);
+        shade.addColorStop(0, 'rgba(0, 0, 0, 0.38)');
+        shade.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        context.fillStyle = shade;
+        context.fillRect(px, py, TILE_SIZE * camera.scale, band);
+      }
+    }
+  }
+
+  /** Every free-standing sprite drops its shadow onto the floor in one pass, so
+   *  a shadow never lands on top of furniture standing in front of it. */
+  function drawShadows(simState) {
+    for (const item of layout.furniture) {
+      const group = assetIndex.get(item.type);
+      if (group?.onWall || group?.onSurface) continue;
+      const sprite = assets.furniture.get(item.type);
+      if (!sprite) continue;
+      drawShadow(
+        item.col * TILE_SIZE + sprite.w / 2,
+        item.row * TILE_SIZE + sprite.h - 1.5,
+        Math.max(4, sprite.w * 0.36),
+        2.4,
+      );
+    }
+    for (const character of [...simState.agents, ...simState.staff]) {
+      if (!character.present) continue;
+      drawShadow(character.x, character.y - 1, 5, 2.2);
+    }
+  }
+
+  /** Paint a world-space rectangle. Sprites are art; these are drawn on top. */
+  function fillWorld(worldX, worldY, w, h, colour, alpha) {
+    if (alpha <= 0.01) return;
+    const { x, y } = origin();
+    context.save();
+    context.globalAlpha = Math.min(1, alpha);
+    context.fillStyle = colour;
+    context.fillRect(
+      x + Math.round(worldX * camera.scale),
+      y + Math.round(worldY * camera.scale),
+      Math.max(1, Math.round(w * camera.scale)),
+      Math.max(1, Math.round(h * camera.scale)),
+    );
+    context.restore();
+  }
+
+  /**
+   * Small procedural animations painted over a furniture sprite: steam off the
+   * coffee machine, a glint wandering a bookshelf, a paper ball arcing into the
+   * bin. None of it is new artwork — it is drawn per frame from the clock — so
+   * a still floor reads as a working one. The idea is lifted from the
+   * munder-difflin office floor, reimplemented here on canvas 2D.
+   */
+  function drawFurnitureLife(item, sprite, groupId, now) {
+    const t = now / 1000;
+    const x = item.col * TILE_SIZE;
+    const y = item.row * TILE_SIZE;
+    const w = sprite.w;
+
+    if (groupId === 'COFFEE') {
+      // Three wisps, each fading as it climbs and drifting slightly sideways.
+      for (let i = 0; i < 3; i += 1) {
+        const phase = (t * 0.55 + i / 3) % 1;
+        fillWorld(
+          x + w * 0.35 + i * 3 + Math.sin((t + i) * 2.2) * 1.2,
+          y - 2 - phase * 9,
+          1.6,
+          2.2,
+          '#dff1f7',
+          0.42 * (1 - phase),
+        );
+      }
+      return;
+    }
+
+    if (groupId === 'BOOKSHELF' || groupId === 'DOUBLE_BOOKSHELF') {
+      const phase = (t * 0.35) % 1;
+      const shelf = Math.floor(t * 0.35) % 3;
+      fillWorld(x + 2 + phase * (w - 6), y + 5 + shelf * 8, 2, 2, '#fff7c8', 0.7 * Math.sin(phase * Math.PI));
+      return;
+    }
+
+    if (groupId === 'BIN') {
+      // One toss a second, only during the first half so the arc has a rest.
+      const phase = t % 1;
+      if (phase >= 0.45) return;
+      const p = phase / 0.45;
+      fillWorld(
+        x + w + 6 - (w * 0.5 + 6) * p,
+        y + 2 - Math.sin(p * Math.PI) * 9,
+        2,
+        2,
+        '#f5f1e6',
+        0.95,
+      );
+      return;
+    }
+
+    if (groupId === 'WHITEBOARD') {
+      const phase = (t * 0.25) % 1;
+      fillWorld(x + 2 + phase * (w - 5), y + 4, 2, 1, '#ffffff', 0.5 * Math.sin(phase * Math.PI));
+    }
+  }
+
   // ── Layers ────────────────────────────────────────────────────────────────
 
   function drawGround() {
@@ -134,13 +270,14 @@ export function createRenderer(canvas, assets) {
   }
 
   /** Pictures, clocks and whiteboards hang on the wall face, behind everything else. */
-  function drawWallDecor() {
+  function drawWallDecor(now) {
     for (const item of layout.furniture) {
       const group = assetIndex.get(item.type);
       if (!group?.onWall) continue;
       const sprite = assets.furniture.get(item.type);
       if (!sprite) continue;
       drawSprite(sprite.image, item.col * TILE_SIZE, item.row * TILE_SIZE - TILE_SIZE);
+      drawFurnitureLife({ ...item, row: item.row - 1 }, sprite, group.id, now);
     }
   }
 
@@ -289,11 +426,14 @@ export function createRenderer(canvas, assets) {
     context.fillStyle = '#07090b';
     context.fillRect(0, 0, deviceWidth, deviceHeight);
 
-    drawGround();
-    drawWalls();
-    drawWallDecor();
-
     const now = options.now ?? 0;
+
+    drawGround();
+    drawWallBaseShade();
+    drawWalls();
+    drawWallDecor(now);
+    drawShadows(simState);
+
     const drawables = [];
 
     for (const item of layout.furniture) {
@@ -304,7 +444,10 @@ export function createRenderer(canvas, assets) {
       const worldY = item.row * TILE_SIZE;
       drawables.push({
         sort: worldY + sprite.h,
-        paint: () => drawSprite(sprite.image, item.col * TILE_SIZE, worldY),
+        paint: () => {
+          drawSprite(sprite.image, item.col * TILE_SIZE, worldY);
+          drawFurnitureLife(item, sprite, group?.id, now);
+        },
       });
     }
 
