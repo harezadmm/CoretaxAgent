@@ -611,6 +611,17 @@ class RagGraph {
     const connected = new Set();
     if (selected) {
       connected.add(selected);
+      // Every chunk of a regulation carries that regulation's title, so hundreds
+      // of dots scattered across the sphere look identical. Selecting one lit a
+      // single dot while the cursor sat on a twin somewhere else, which reads as
+      // the graph jumping. Light the whole document instead: they open the same
+      // record anyway.
+      const parent = this.nodeMap.get(selected)?.document_id;
+      if (parent) {
+        for (const node of this.nodes) {
+          if (node.document_id === parent) connected.add(node.id);
+        }
+      }
       for (const edge of this.edges) {
         if (edge.source === selected) connected.add(edge.target);
         if (edge.target === selected) connected.add(edge.source);
