@@ -295,9 +295,19 @@
 
 .rag-manager{
   display:grid;
-  grid-template-rows:auto auto minmax(220px,1fr) auto minmax(250px,auto);
+  /* The inspector row was minmax(250px,auto): auto sizes to content, so a long
+     regulation pushed the panel past its own box and the header scrolled out of
+     reach. Both scrollable rows are now fractions of the available height, and
+     each scrolls inside itself. The 760px cap went with it — the workspace is
+     sized off the viewport now, so the cap only wasted the space below it. */
+  /* Row minimums must be small enough to fit the shortest workspace, or the
+     panel overflows its own column again — 150+260 plus the headers already
+     exceeded a 430px workspace. Both rows scroll internally, so a small floor
+     costs nothing. */
+  grid-template-rows:auto auto minmax(80px,0.8fr) auto minmax(120px,1.2fr);
   min-width:0;
-  max-height:760px;
+  min-height:0;
+  overflow:hidden;
   border-left:1px solid #273139;
   background:linear-gradient(180deg,#10161a,#0a0e11);
 }
@@ -429,7 +439,7 @@
 }
 
 .rag-inspector{
-  min-height:250px;
+  min-height:0;
   padding:13px 14px 15px;
   overflow:auto;
   scrollbar-width:thin;
