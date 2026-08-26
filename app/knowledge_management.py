@@ -620,6 +620,7 @@ class KnowledgeManager:
             )
 
         emitted = 0
+        ordinal: dict[str, int] = {}
         for index, chunk in enumerate(self.knowledge_base.chunks):
             if emitted >= limit:
                 break
@@ -627,9 +628,12 @@ class KnowledgeManager:
             if record is None or chunk.document not in wanted:
                 continue
             # Every BPOM regulation carries a single "Isi peraturan" heading, so
-            # the section name labels all 51k chunks identically. The parent
-            # title is the only thing that tells a reader what they are hovering.
-            label = record.title if len(chunk.section) < 4 or chunk.section == "Isi peraturan" else chunk.section
+            # section names label all 51k chunks identically — and identical
+            # labels are what made the chunk graph unreadable: selecting one dot
+            # lit a twin elsewhere and looked like the graph jumping. Number each
+            # chunk within its own document so every dot names itself.
+            ordinal[record.id] = ordinal.get(record.id, 0) + 1
+            label = f"{record.title} §{ordinal[record.id]}"
             nodes.append(
                 KnowledgeGraphNode(
                     id=f"c{index}",

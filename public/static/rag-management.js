@@ -1,9 +1,9 @@
 const TOKEN_STORAGE_KEY = 'bpom.ragAdminToken';
-// One node per document. The chunk-level graph put 8k dots on screen, but every
-// chunk of a regulation wears that regulation's title, so selecting one lit a
-// twin somewhere else and reading it as a jump was fair. Documents are distinct
-// from each other, which is what makes the graph legible.
-const GRAPH_LIMIT = 2000;
+// Matches the density the tax corpus had: it drew 6,566 documents, and BPOM
+// holds only 263, so chunks are the only unit that reaches the same scale.
+// Chunks now carry a section number, which is what the earlier attempt lacked —
+// identical labels were why selecting one dot appeared to light another.
+const GRAPH_LIMIT = 6600;
 
 const SOURCE_LABELS = {
   official_regulation: 'Peraturan BPOM',
@@ -1016,7 +1016,7 @@ export function mountRagManagement(root, notify = () => {}) {
   };
 
   const graphParams = () => {
-    const params = new URLSearchParams({ limit: String(GRAPH_LIMIT) });
+    const params = new URLSearchParams({ limit: String(GRAPH_LIMIT), unit: 'chunk' });
     if (state.query) params.set('q', state.query);
     if (state.sourceType !== 'all') params.set('source_type', state.sourceType);
     if (state.status !== 'all') params.set('status', state.status);
