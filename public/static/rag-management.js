@@ -555,8 +555,18 @@ class RagGraph {
     if (!this.pointer) return;
     const { node, moved } = this.pointer;
     if (node && node.kind === 'document' && !moved) {
-      this.selectedNodeId = node.id;
-      this.onSelect(node.document_id);
+      if (this.selectedNodeId === node.id) {
+        // Clicking the lit dot again lets it go. Hover is dropped with it,
+        // otherwise a cursor still resting on the dot would keep the orb
+        // frozen and the release would look like it did nothing; the next
+        // pointermove latches hover again as usual.
+        this.selectedNodeId = null;
+        this.hoveredNodeId = null;
+        this.onSelect(null);
+      } else {
+        this.selectedNodeId = node.id;
+        this.onSelect(node.document_id);
+      }
     }
     this.pointer = null;
     this.canvas.style.cursor = this.hoveredNodeId ? 'pointer' : 'grab';
@@ -606,6 +616,12 @@ class RagGraph {
   }
 
   selectDocument(documentId) {
+    if (!documentId) {
+      this.selectedNodeId = null;
+      this.render();
+      this.resume();
+      return;
+    }
     // A click has already chosen one specific chunk. Re-resolving the document
     // to its first matching node threw that away, and a regulation owns up to
     // 171 chunks scattered right across the sphere — so the highlight and the
@@ -1099,7 +1115,19 @@ export function mountRagManagement(root, notify = () => {}) {
     inspector.innerHTML = `<div class="rag-inspector-head"><span class="rag-source-chip" style="--chip:${SOURCE_COLORS[document.source_type] || '#8d9aa4'}">${escapeHtml(sourceLabel(document.source_type))}</span><em class="rag-status ${escapeHtml(document.status)}">${escapeHtml(statusLabel(document.status))}</em></div><h3>${escapeHtml(document.title)}</h3><p class="rag-path">${escapeHtml(document.relative_path)}</p><div class="rag-detail-grid"><div><span>Chunks</span><strong>${formatNumber(document.chunk_count)}</strong></div><div><span>Ukuran</span><strong>${formatBytes(document.size_bytes)}</strong></div><div><span>Diperbarui</span><strong>${escapeHtml(formatDate(document.updated_at))}</strong></div><div><span>Akses</span><strong>${document.editable ? 'Editable' : 'Read-only'}</strong></div></div>${document.tags.length ? `<div class="rag-tags">${document.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>` : ''}<pre class="rag-content-preview">${escapeHtml(bodyPreview || document.preview)}</pre>${document.editable ? '<p class="rag-managed-note">Memory operator. Perubahan akan langsung membangun ulang retrieval index.</p>' : '<p class="rag-readonly-note">Sumber resmi bersifat read-only agar hasil sinkronisasi tetap utuh.</p>'}<div class="rag-inspector-actions">${externalUrl ? `<a href="${escapeHtml(externalUrl)}" target="_blank" rel="noopener noreferrer">Buka sumber ↗</a>` : ''}${document.editable ? '<button type="button" data-rag-action="edit">Edit</button><button class="danger" type="button" data-rag-action="delete">Hapus</button>' : ''}</div>`;
   };
 
+  const clearSelection = () => {
+    state.selectedDocument = null;
+    state.graph?.selectDocument(null);
+    root.querySelector('.rag-inspector').innerHTML = '<div class="rag-inspector-empty"><span>✦</span><strong>Pilih sebuah node</strong><p>Detail sumber, status, chunk, dan aksi pengelolaan akan tampil di sini.</p></div>';
+    root.querySelectorAll('.rag-document-item').forEach((item) => item.classList.remove('selected'));
+  };
+
   const selectDocument = async (documentId) => {
+    // The graph passes null when a second click releases the lit dot.
+    if (!documentId) {
+      clearSelection();
+      return;
+    }
     root.querySelector('.rag-inspector').innerHTML = loadingMarkup('Membuka dokumen…');
     try {
       const document = await request(`/api/knowledge/documents/${encodeURIComponent(documentId)}`);
