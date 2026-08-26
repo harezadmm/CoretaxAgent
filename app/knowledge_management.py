@@ -619,13 +619,32 @@ class KnowledgeManager:
                 )
             )
 
+        # Round-robin across documents rather than taking the first N chunks.
+        # Chunks arrive grouped by document, so a straight prefix drew 6,600
+        # dots from 44 regulations and left the other 216 off the graph
+        # entirely.
+        grouped: dict[str, list] = defaultdict(list)
+        for index, chunk in enumerate(self.knowledge_base.chunks):
+            if chunk.document in wanted:
+                grouped[chunk.document].append((index, chunk))
+
+        interleaved: list[tuple[int, object]] = []
+        if grouped:
+            deepest = max(len(items) for items in grouped.values())
+            for depth in range(deepest):
+                if len(interleaved) >= limit:
+                    break
+                for items in grouped.values():
+                    if depth < len(items):
+                        interleaved.append(items[depth])
+
         emitted = 0
         ordinal: dict[str, int] = {}
-        for index, chunk in enumerate(self.knowledge_base.chunks):
+        for index, chunk in interleaved:
             if emitted >= limit:
                 break
             record = by_file.get(chunk.document)
-            if record is None or chunk.document not in wanted:
+            if record is None:
                 continue
             # Every BPOM regulation carries a single "Isi peraturan" heading, so
             # section names label all 51k chunks identically — and identical
