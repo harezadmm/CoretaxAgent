@@ -31,7 +31,7 @@ export const DIR = { DOWN: 'down', UP: 'up', RIGHT: 'right', LEFT: 'left' };
  *   2 — `seat.monitor.row` became the desk's own row, not the tile above it.
  *   3 — the room grew from 26x16 to 36x17, with more desks in both zones.
  */
-export const LAYOUT_VERSION = 3;
+export const LAYOUT_VERSION = 4;
 
 /** Tiles a character may stand on, ignoring furniture. */
 export function isWalkableTile(tile) {
@@ -235,18 +235,28 @@ const COLS = 36;
 const ROWS = 17;
 
 /**
- * Desk bands: a 3-wide desk occupies two rows, the seat sits one row below it,
- * and the next band starts four rows down so nobody sits inside a desk.
+ * Desk bands: a 3-wide desk occupies two rows and the seat sits one row below
+ * it, so a band is three rows deep and the next one starts immediately after.
+ *
+ * Bands used to be spaced four rows apart, which spent a whole empty row per
+ * band on a corridor the seat row already provides — a floor of 24 desks in a
+ * room with space for 36. Packing them to three fits a fourth band and a
+ * seventh column without growing the room, which matters: the map is sized so
+ * it renders at a whole scale factor, and a wider one drops to 1x where 16px
+ * sprites stop being readable.
  */
-const AI_DESK_COLS = [1, 5, 9, 13, 17, 21];
-const AI_DESK_ROWS = [2, 6, 10];
+const AI_DESK_COLS = [1, 5, 9, 13, 17, 21, 24];
+const AI_DESK_ROWS = [2, 5, 8, 11];
 /**
  * The escalation desks are packed two abreast, which leaves column 34 as the
  * only way between the bands — a desk row spans its full width and would
- * otherwise seal the upper desks off from the partition door.
+ * otherwise seal the upper desks off from the partition door. Widening this
+ * zone to fit the seventh AI column did exactly that: six of the eight staff
+ * seats lost every path to the escalation inbox. The seventh column butts
+ * against its neighbour on the AI side instead, where spare columns remain.
  */
 const STAFF_DESK_COLS = [28, 31];
-const STAFF_DESK_ROWS = [2, 6, 10];
+const STAFF_DESK_ROWS = [2, 5, 8, 11];
 
 /** Column of the partition dividing the AI floor from the escalation desks. */
 const PARTITION_COL = 27;
@@ -293,8 +303,9 @@ export function createDefaultLayout() {
     if (!PARTITION_GAP_ROWS.includes(row)) setTile(layout, PARTITION_COL, row, TILE.WALL);
   }
 
-  // Accent carpet under each working area, so the two zones read apart at a glance.
-  for (let row = 1; row <= 12; row += 1) {
+  // Accent carpet under each working area, so the two zones read apart at a
+  // glance. It runs to row 13, the seat row of the fourth desk band.
+  for (let row = 1; row <= 13; row += 1) {
     for (let col = 1; col <= PARTITION_COL - 1; col += 1) setTile(layout, col, row, TILE.CARPET_AI);
     for (let col = PARTITION_COL + 1; col <= COLS - 2; col += 1) {
       setTile(layout, col, row, TILE.CARPET_STAFF);
@@ -352,21 +363,22 @@ export function createDefaultLayout() {
   // bottom wall, so the trim along row 15 is all single-tile pieces.
   place(furniture, 'POT', 34, 15);
 
-  // Partition greenery, softening the wall between the zones.
-  for (const row of [1, 3, 5, 7, 9, 11]) place(furniture, 'PLANT', PARTITION_COL - 1, row);
+  // The partition greenery is gone: the seventh desk column now runs to the
+  // partition itself, so there is no spare column beside it to stand a plant in.
 
-  // Break area along the bottom of the AI floor.
-  place(furniture, 'LARGE_PLANT', 1, 13);
+  // Break area along the bottom of the AI floor. Row 13 became the fourth
+  // band's seat row, so everything that used to sit there moved down a row.
+  place(furniture, 'LARGE_PLANT', 1, 14);
   place(furniture, 'SOFA_FRONT', 4, 14);
   place(furniture, 'COFFEE_TABLE', 7, 14);
   place(furniture, 'COFFEE', 8, 14);
-  place(furniture, 'SOFA_SIDE', 10, 13);
-  place(furniture, 'DOUBLE_BOOKSHELF', 13, 13);
+  place(furniture, 'SOFA_SIDE', 10, 14);
+  place(furniture, 'DOUBLE_BOOKSHELF', 13, 14);
   place(furniture, 'WOODEN_BENCH', 16, 15);
-  place(furniture, 'CACTUS', 20, 13);
+  place(furniture, 'CACTUS', 20, 14);
   place(furniture, 'CUSHIONED_BENCH', 22, 15);
-  place(furniture, 'SMALL_TABLE_FRONT', 23, 13);
-  place(furniture, 'BIN', 25, 15);
+  place(furniture, 'SMALL_TABLE_FRONT', 24, 14);
+  place(furniture, 'BIN', 26, 15);
   place(furniture, 'POT', 12, 15);
 
   // Wall fittings.
