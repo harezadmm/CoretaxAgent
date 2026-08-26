@@ -640,6 +640,7 @@ class RagGraph {
 
     // The corpus' real edges are hub-and-spoke, so they only earn ink when the
     // reader has actually picked something.
+    let selectionPath = null;
     if (selected) {
       const path = new Path2D();
       for (const edge of this.edges) {
@@ -649,9 +650,10 @@ class RagGraph {
         path.moveTo(a.sx, a.sy);
         path.lineTo(b.sx, b.sy);
       }
-      ctx.strokeStyle = 'rgba(83,217,229,0.5)';
-      ctx.lineWidth = 1.1 / lineScale;
-      ctx.stroke(path);
+      // Stroked after the dots, further down. Drawn here it went under eight
+      // thousand of them and vanished, which is what made a selected node look
+      // unconnected to anything.
+      selectionPath = path;
     }
 
     // Dots, grouped by colour and depth band so the far side of the orb is
@@ -716,6 +718,18 @@ class RagGraph {
       ctx.stroke(meshPaths[index]);
     }
 
+    if (selectionPath) {
+      // Bold, on top of everything: this is the one thing the reader asked to
+      // see. A glow carries it over the dot field underneath.
+      ctx.globalAlpha = 1;
+      ctx.shadowColor = '#53d9e5';
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = 'rgba(120,240,255,0.95)';
+      ctx.lineWidth = 2.6 / this.transform.scale;
+      ctx.stroke(selectionPath);
+      ctx.shadowBlur = 0;
+    }
+
     for (const node of standouts) {
       const isSelected = node.id === selected;
       const isHovered = node.id === this.hoveredNodeId;
@@ -747,8 +761,18 @@ class RagGraph {
 
       if (node.kind !== 'document' || isSelected || isHovered) {
         const label = node.label.length > 46 ? `${node.label.slice(0, 43)}…` : node.label;
-        ctx.font = `${node.kind === 'root' ? 700 : 500} ${node.kind === 'document' ? 8 : 9}px Cascadia Mono, Consolas, monospace`;
-        ctx.fillStyle = isSelected || isHovered ? '#ffffff' : '#c2cbd0';
+        // Font size is in world units, so at fit zoom an 8px label rendered at
+        // about two screen pixels of mush. Divide by the zoom to pin it to a
+        // constant on-screen size, and drop the depth alpha the dots left
+        // behind — text at 0.4 opacity reads as blur, not distance.
+        const px = (node.kind === 'document' ? 9 : 10) / this.transform.scale;
+        ctx.globalAlpha = 1;
+        ctx.font = `${node.kind === 'root' ? 700 : 500} ${px}px Cascadia Mono, Consolas, monospace`;
+        ctx.lineWidth = 3 / this.transform.scale;
+        ctx.strokeStyle = 'rgba(5,8,11,0.85)';
+        ctx.lineJoin = 'round';
+        ctx.strokeText(label, node.sx + size + 5, node.sy);
+        ctx.fillStyle = isSelected || isHovered ? '#ffffff' : '#dbe4e7';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText(label, node.sx + size + 5, node.sy);
