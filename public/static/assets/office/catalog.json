@@ -323,10 +323,10 @@
     },
     "BOOKSHELF": {
       "file": "furniture/BOOKSHELF/BOOKSHELF.png",
-      "w": 32,
-      "h": 16,
-      "fw": 2,
-      "fh": 1
+      "w": 16,
+      "h": 32,
+      "fw": 1,
+      "fh": 2
     },
     "CACTUS": {
       "file": "furniture/CACTUS/CACTUS.png",
@@ -426,10 +426,10 @@
     },
     "LARGE_PLANT": {
       "file": "furniture/LARGE_PLANT/LARGE_PLANT.png",
-      "w": 32,
-      "h": 48,
-      "fw": 2,
-      "fh": 3
+      "w": 16,
+      "h": 32,
+      "fw": 1,
+      "fh": 2
     },
     "PC_FRONT_ON_1": {
       "file": "furniture/PC/PC_FRONT_ON_1.png",
@@ -623,7 +623,7 @@
       "PC_FRONT_*"
     ]
   },
-  "version": "d267af8ea09e",
+  "version": "5dff1e663bb9",
   "floorZones": {
     "ai": [
       "ai_0.png",

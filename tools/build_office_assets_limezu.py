@@ -60,8 +60,51 @@ FLOOR_BLOCKS = {
 }
 
 
+# The rest of the furniture, mapped onto the ids the dashboard already places.
+#
+# ``anchor`` matters whenever the pack's sprite is shorter than the slot it goes
+# into. A picture hangs from the top of its tile and a plant stands on the bottom
+# of its, so padding the wrong end leaves the picture floating off the wall or
+# the plant hovering above the floor.
+FURNITURE = {
+    "LARGE_PAINTING": dict(first=400, wide=2, tall=1, slot=(2, 2), anchor="bottom"),
+    "SMALL_PAINTING": dict(first=404, wide=1, tall=1, slot=(1, 2), anchor="bottom"),
+    "SMALL_PAINTING_2": dict(first=406, wide=1, tall=1, slot=(1, 2), anchor="bottom"),
+    # No WHITEBOARD here on purpose. The pack's presentation boards are a full
+    # two tiles of art, and wall decor is drawn a tile above the wall it hangs
+    # on, so a two-tile board leaves half of itself above the ceiling. Ours is
+    # drawn with headroom built in, so it stays.
+    "BOOKSHELF": dict(first=447, wide=1, tall=2, slot=(1, 2), anchor="bottom"),
+    "DOUBLE_BOOKSHELF": dict(first=476, wide=2, tall=2, slot=(2, 2), anchor="bottom"),
+    "LARGE_PLANT": dict(first=452, wide=1, tall=2, slot=(1, 2), anchor="bottom"),
+    "CACTUS": dict(first=454, wide=1, tall=2, slot=(1, 2), anchor="bottom"),
+    "PLANT": dict(first=466, wide=1, tall=1, slot=(1, 2), anchor="bottom"),
+    "PLANT_2": dict(first=467, wide=1, tall=1, slot=(1, 2), anchor="bottom"),
+    "POT": dict(first=467, wide=1, tall=1, slot=(1, 1), anchor="bottom"),
+}
+
+
 def cut(sheet: Image.Image, region: tuple[int, int, int, int]) -> Image.Image:
     return sheet.crop(region).convert("RGBA")
+
+
+def fit(art: Image.Image, slot: tuple[int, int], anchor: str) -> Image.Image:
+    """Drop a sprite into its slot without stretching it.
+
+    The art is trimmed to its own ink first, so where it sat inside the pack's
+    tile does not decide where it lands here. Matching the slot size is not
+    enough on its own: a picture drawn at the top of a 32px tile and a picture
+    drawn at the bottom both "fit" a 32px slot, and the first one hangs a full
+    tile above the wall it is supposed to be on.
+    """
+    width, height = slot[0] * TILE, slot[1] * TILE
+    bounds = art.getbbox()
+    if bounds:
+        art = art.crop(bounds)
+    canvas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    top = 0 if anchor == "top" else height - art.height
+    canvas.alpha_composite(art, ((width - art.width) // 2, top))
+    return canvas
 
 
 def screen_frames(off: Image.Image, on: Image.Image, count: int) -> list[Image.Image]:
@@ -150,6 +193,25 @@ def main() -> None:
     for name in ("PC_FRONT_OFF", "PC_FRONT_ON_1", "PC_FRONT_ON_2", "PC_FRONT_ON_3"):
         assets[name]["w"] = 32
         assets[name]["fw"] = 2
+
+    for base_id, spec in FURNITURE.items():
+        # Some pieces exist as _FRONT/_SIDE/_BACK variants; the pack has one
+        # top-down sprite each, so every variant gets the same art.
+        variants = [name for name in assets if name == base_id or name.startswith(f"{base_id}_")]
+        if not variants:
+            print(f"  ! {base_id} tidak ada di catalog, dilewati")
+            continue
+        art = fit(
+            cut(office, box(spec["first"], spec["wide"], spec["tall"])),
+            spec["slot"],
+            spec["anchor"],
+        )
+        for name in variants:
+            write(art, assets[name]["file"])
+            assets[name]["w"] = spec["slot"][0] * TILE
+            assets[name]["h"] = spec["slot"][1] * TILE
+            assets[name]["fw"] = spec["slot"][0]
+            assets[name]["fh"] = spec["slot"][1]
 
     catalogue["limezu"] = {
         "pack": "Modern Interiors - RPG Tileset [16X16] by LimeZu",
