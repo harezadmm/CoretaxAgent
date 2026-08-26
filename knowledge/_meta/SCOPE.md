@@ -1,28 +1,27 @@
 # Cakupan Knowledge Base
 
-Knowledge base ini ditujukan untuk bantuan penggunaan Coretax dan informasi umum yang tersedia pada sumber resmi DJP.
+Knowledge base ini berisi peraturan resmi Badan Pengawas Obat dan Makanan
+(BPOM) Republik Indonesia.
 
 ## Topik yang dicakup
 
-- akses dan aktivasi akun;
-- pendaftaran dan perubahan data/status;
-- PIC, role, pihak terkait, dan impersonate;
-- kode otorisasi dan sertifikat digital;
-- bukti potong dan faktur pajak;
-- pelaporan SPT;
-- kode billing, pembayaran, deposit, dan pemindahbukuan;
-- layanan perpajakan dan kendala penggunaan yang didokumentasikan DJP;
-- peraturan perpajakan dan regulasi administrasi yang dipublikasikan pada katalog resmi DJP, dengan tanggal dan status katalog;
-- panduan untuk segmen wajib pajak tertentu yang tersedia pada indeks resmi.
+- pengawasan obat, bahan obat, narkotika, psikotropika, dan prekursor farmasi;
+- keamanan dan mutu pangan olahan, termasuk label, gizi, dan cemaran;
+- kosmetik, obat tradisional, dan suplemen kesehatan;
+- registrasi, izin edar, dan sertifikasi produk;
+- cara pembuatan dan cara distribusi yang baik;
+- kelembagaan dan tata kerja BPOM.
 
-Regulasi historis disimpan untuk konteks perubahan dan penelusuran, tetapi regulasi berstatus aktif diprioritaskan saat retrieval. Status katalog bukan pengganti verifikasi hukum; untuk keputusan atau kasus personal, agent tetap mengarahkan pengguna ke kanal resmi DJP.
+## Batas yang disengaja
 
-## Di luar kewenangan agent
+- Tidak memberikan penilaian keamanan atau kelayakan produk tertentu.
+- Tidak menggantikan keputusan resmi BPOM atas suatu permohonan.
+- Tidak menampilkan data pendaftaran atau data perusahaan yang tidak publik.
+- Tidak menangani kasus yang membutuhkan pemeriksaan atau verifikasi khusus.
 
-- membuka atau mengubah data wajib pajak;
-- meminta kata sandi, passphrase, OTP, NIK, atau informasi rahasia;
-- menjalankan pembayaran, pelaporan, atau transaksi;
-- menetapkan kewajiban atau memberikan keputusan perpajakan personal;
-- menjawab tanpa sumber resmi yang memadai.
+## Sifat sumber
 
-Untuk kondisi tersebut, agent harus mengarahkan pengguna ke petugas atau kanal resmi DJP.
+Seluruh dokumen adalah teks peraturan yang bersifat normatif. Peraturan yang
+sudah dicabut tetap disimpan dan ditandai `status: repealed`, karena masih
+diperlukan untuk menelusuri riwayat ketentuan — namun jawaban harus
+memprioritaskan peraturan yang berlaku.
