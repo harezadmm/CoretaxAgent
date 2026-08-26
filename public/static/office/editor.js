@@ -23,7 +23,7 @@ import {
   validateLayout,
 } from './tilemap.js';
 
-const STORAGE_KEY = 'coretax.office.layout.v1';
+const STORAGE_KEY = 'bpom.office.layout.v1';
 
 const PAINTS = [
   { id: 'floor', tile: TILE.FLOOR, label: 'Lantai' },

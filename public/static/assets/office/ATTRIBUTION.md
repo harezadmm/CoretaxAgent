@@ -21,7 +21,7 @@ manifests and from `webview-ui/src/office/`.
 
 Nothing else in this project is derived from pixel-agents: the tile map,
 simulation, renderer, detail panel, and layout editor under `app/static/office/`
-are original work for the Coretax dashboard.
+are original work for the BPOM dashboard.
 
 ## Sprite geometry
 

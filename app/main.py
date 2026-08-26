@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.agent import CoretaxAgent
+from app.agent import BpomAgent
 from app.config import get_settings
 from app.knowledge import KnowledgeBase
 from app.knowledge_management import (
@@ -32,11 +32,11 @@ from app.schemas import (
 settings = get_settings()
 knowledge_base = KnowledgeBase(settings.knowledge_dir)
 knowledge_manager = KnowledgeManager(settings.knowledge_dir, knowledge_base)
-agent = CoretaxAgent(settings, knowledge_base)
+agent = BpomAgent(settings, knowledge_base)
 
 app = FastAPI(
-    title="Coretax AI Agent",
-    description="Prototype agent informasi Coretax dengan RAG dan eskalasi.",
+    title="BPOM AI Agent",
+    description="Prototype agent informasi BPOM dengan RAG dan eskalasi.",
     version="0.1.0",
 )
 
@@ -52,7 +52,7 @@ if STATIC_DIR.is_dir():
 
 @app.get("/", include_in_schema=False)
 def dashboard() -> FileResponse:
-    """Serve the local Coretax support-operations dashboard."""
+    """Serve the local BPOM support-operations dashboard."""
     index_file = PUBLIC_DIR / "index.html"
     if not index_file.is_file():
         raise HTTPException(status_code=404, detail="Dashboard tidak tersedia.")

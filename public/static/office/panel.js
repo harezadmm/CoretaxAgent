@@ -69,7 +69,7 @@ export function officeMarkup() {
       <article class="office-stage-panel">
         <div class="workflow-toolbar">
           <div>
-            <p class="panel-kicker">VIRTUAL OFFICE · CORETAX AI CALL CENTER</p>
+            <p class="panel-kicker">VIRTUAL OFFICE · BPOM AI CALL CENTER</p>
             <h3>Meja AI menjawab panggilan → kasus sulit diantar ke meja petugas</h3>
           </div>
           <div class="canvas-tools office-tools">
@@ -85,7 +85,7 @@ export function officeMarkup() {
         </div>
 
         <div class="office-canvas-wrap">
-          <canvas id="office-canvas" aria-label="Visualisasi kantor call center Coretax"></canvas>
+          <canvas id="office-canvas" aria-label="Visualisasi kantor call center BPOM"></canvas>
           <div class="office-hud" id="office-hud"></div>
           <div class="office-editor-bar" id="office-editor-bar" hidden></div>
         </div>

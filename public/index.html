@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Coretax Agent — Support Operations</title>
+    <title>BPOM Agent — Support Operations</title>
     <link rel="stylesheet" href="/static/dashboard.css" />
     <link rel="stylesheet" href="/static/rag-management.css" />
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar" aria-label="Navigasi utama">
-        <a class="brand" href="#overview" aria-label="Coretax Agent overview">
+        <a class="brand" href="#overview" aria-label="BPOM Agent overview">
           <span class="brand-mark">✦</span>
-          <span>CORETAX<br /><em>AGENT</em></span>
+          <span>BPOM<br /><em>AGENT</em></span>
         </a>
 
         <nav class="nav-list">
@@ -55,7 +55,7 @@
 
         <section class="dashboard-view" id="overview">
           <div class="overview-heading">
-            <div><p class="eyebrow">CORETAX AI VOICE SUPPORT</p><h2>Overview</h2><p class="subtle">Pantau bantuan pengguna, beban panggilan, dan eskalasi petugas.</p></div>
+            <div><p class="eyebrow">BPOM AI VOICE SUPPORT</p><h2>Overview</h2><p class="subtle">Pantau bantuan pengguna, beban panggilan, dan eskalasi petugas.</p></div>
             <div class="period-picker" role="group" aria-label="Pilih periode">
               <button data-period="Hari ini">Day</button><button class="active" data-period="7 hari">7 days</button><button data-period="30 hari">Month</button>
             </div>
@@ -75,7 +75,7 @@
                 <div class="load-period-picker" role="group" aria-label="Pilih periode grafik beban panggilan"><button data-chart-period="Harian">Daily</button><button class="active" data-chart-period="Mingguan">Weekly</button><button data-chart-period="Bulanan">Monthly</button></div>
               </div>
               <div class="chart-scale"><span>80</span><span>60</span><span>40</span><span>20</span><span>0</span></div>
-              <div class="reference-chart" aria-label="Tren volume panggilan Coretax selama tujuh hari">
+              <div class="reference-chart" aria-label="Tren volume panggilan BPOM selama tujuh hari">
                 <svg class="dot-plot" viewBox="0 0 720 190" preserveAspectRatio="none" role="img" aria-label="Grafik titik volume panggilan mingguan"></svg>
               </div>
               <div class="chart-footer"><span><i class="pulse"></i> Puncak panggilan: Rabu, 10:00—12:00</span><span>+4.8% dibanding minggu lalu</span></div>
@@ -92,7 +92,7 @@
               <div class="panel-header"><div><p class="panel-kicker">ACTION REQUIRED</p><h3>Recent Escalations <span class="badge">12</span></h3></div><button class="text-button" data-view-target="escalations">Open queue ›</button></div>
               <div class="case-list">
                 <button class="case-item"><span class="case-priority high"></span><span><strong>Gagal aktivasi akun</strong><small>08••• 4218 · 4 min ago</small></span><em>HIGH</em></button>
-                <button class="case-item"><span class="case-priority medium"></span><span><strong>Status kode billing</strong><small>08••• 1903 · 12 min ago</small></span><em>MED</em></button>
+                <button class="case-item"><span class="case-priority medium"></span><span><strong>Status sertifikat CPOB</strong><small>08••• 1903 · 12 min ago</small></span><em>MED</em></button>
                 <button class="case-item"><span class="case-priority medium"></span><span><strong>Data NIK tidak sinkron</strong><small>08••• 8881 · 18 min ago</small></span><em>MED</em></button>
               </div>
             </article>
@@ -100,9 +100,9 @@
             <article class="panel topic-panel">
               <div class="panel-header"><div><p class="panel-kicker">KNOWLEDGE INSIGHT</p><h3>Top Questions</h3></div><button class="text-button">Analytics ›</button></div>
               <ol class="topic-list">
-                <li><span>01</span><div><strong>Aktivasi akun Coretax</strong><div class="micro-bar"><i style="width:88%"></i></div></div><b>128</b></li>
-                <li><span>02</span><div><strong>Kode otorisasi DJP</strong><div class="micro-bar"><i style="width:67%"></i></div></div><b>97</b></li>
-                <li><span>03</span><div><strong>Pembuatan kode billing</strong><div class="micro-bar"><i style="width:53%"></i></div></div><b>76</b></li>
+                <li><span>01</span><div><strong>Registrasi pangan olahan</strong><div class="micro-bar"><i style="width:88%"></i></div></div><b>128</b></li>
+                <li><span>02</span><div><strong>Izin edar kosmetik</strong><div class="micro-bar"><i style="width:67%"></i></div></div><b>97</b></li>
+                <li><span>03</span><div><strong>Sertifikat CPOB</strong><div class="micro-bar"><i style="width:53%"></i></div></div><b>76</b></li>
               </ol>
             </article>
           </section>
@@ -111,9 +111,9 @@
             <div class="panel-header"><div><p class="panel-kicker"><i class="live-dot"></i> LIVE MONITORING</p><h3>Active AI Calls</h3></div><button class="text-button" data-view-target="live">Manage calls ›</button></div>
             <div class="call-table" role="table" aria-label="Panggilan AI yang aktif">
               <div class="table-row table-label" role="row"><span>CALLER</span><span>TOPIC</span><span>DURATION</span><span>AI STATUS</span><span></span></div>
-              <div class="table-row" role="row"><span><i class="caller-icon">A</i>08••• 8214</span><span>Aktivasi akun</span><span class="mono">02:14</span><span><em class="answering">● ANSWERING</em></span><button class="take-button">Observe</button></div>
-              <div class="table-row" role="row"><span><i class="caller-icon secondary">R</i>08••• 4416</span><span>Pelaporan SPT</span><span class="mono">01:38</span><span><em class="searching">◌ SEARCHING KB</em></span><button class="take-button">Observe</button></div>
-              <div class="table-row" role="row"><span><i class="caller-icon third">S</i>08••• 9031</span><span>Login Coretax</span><span class="mono">00:47</span><span><em class="answering">● ANSWERING</em></span><button class="take-button">Observe</button></div>
+              <div class="table-row" role="row"><span><i class="caller-icon">A</i>08••• 8214</span><span>Registrasi produk</span><span class="mono">02:14</span><span><em class="answering">● ANSWERING</em></span><button class="take-button">Observe</button></div>
+              <div class="table-row" role="row"><span><i class="caller-icon secondary">R</i>08••• 4416</span><span>Efek samping obat</span><span class="mono">01:38</span><span><em class="searching">◌ SEARCHING KB</em></span><button class="take-button">Observe</button></div>
+              <div class="table-row" role="row"><span><i class="caller-icon third">S</i>08••• 9031</span><span>Akun e-registration</span><span class="mono">00:47</span><span><em class="answering">● ANSWERING</em></span><button class="take-button">Observe</button></div>
             </div>
           </section>
         </section>

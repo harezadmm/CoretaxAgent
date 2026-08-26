@@ -46,7 +46,7 @@ def main() -> None:
     for path in sorted((knowledge_dir / "manuals").glob("*.md")):
         checked += 1
         changed += int(clean_file(path, is_faq=False))
-    for path in sorted((knowledge_dir / "coretaxpedia").glob("*.md")):
+    for path in sorted((knowledge_dir / "bpompedia").glob("*.md")):
         checked += 1
         changed += int(clean_file(path, is_faq=True))
 

@@ -586,7 +586,7 @@ class KnowledgeManager:
         nodes: list[KnowledgeGraphNode] = [
             KnowledgeGraphNode(
                 id="rag-root",
-                label="Coretax RAG Memory",
+                label="BPOM RAG Memory",
                 kind="root",
                 size=10,
                 count=len(records),

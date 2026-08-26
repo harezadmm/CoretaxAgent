@@ -1,4 +1,4 @@
-const TOKEN_STORAGE_KEY = 'coretax.ragAdminToken';
+const TOKEN_STORAGE_KEY = 'bpom.ragAdminToken';
 // Every document, not a sample. The renderer batches its draw calls so the full
 // corpus stays interactive; see render().
 const GRAPH_LIMIT = 20000;
@@ -37,7 +37,7 @@ const TOPIC_COLOR = '#8b93b8';
 const PULSE_PERIOD = 5200;
 // Radians per second: about 17 degrees, so a full turn takes roughly 21s.
 const ROTATION_RATE = 0.3;
-const SPIN_STORAGE_KEY = 'coretax.ragAutoSpin';
+const SPIN_STORAGE_KEY = 'bpom.ragAutoSpin';
 
 const STATUS_LABELS = {
   active: 'Aktif',
@@ -800,7 +800,7 @@ function shellMarkup(capabilities) {
   </section>`;
 }
 
-const WORKSPACE_HEIGHT_KEY = 'coretax.ragWorkspaceHeight';
+const WORKSPACE_HEIGHT_KEY = 'bpom.ragWorkspaceHeight';
 const WORKSPACE_MIN = 380;
 const WORKSPACE_MAX = 2600;
 

@@ -71,7 +71,7 @@ const HOURLY_WEIGHT = [
 /**
  * Calls per hour at the busiest point of the day.
  *
- * Sized against the eighteen AI desks rather than against a real DJP call
+ * Sized against the eighteen AI desks rather than against a real BPOM call
  * volume: with calls averaging a minute, this keeps roughly half the floor on a
  * call through the morning peak, so the office reads as busy without every desk
  * being permanently occupied. Grow the floor and this has to grow with it, or
@@ -80,44 +80,44 @@ const HOURLY_WEIGHT = [
 const PEAK_CALLS_PER_HOUR = 600;
 
 const TOPICS = [
-  { name: 'Aktivasi akun Coretax', weight: 32, short: 'Aktivasi akun' },
-  { name: 'Kode otorisasi DJP', weight: 24, short: 'Kode otorisasi' },
-  { name: 'Pembuatan kode billing', weight: 18, short: 'Kode billing' },
-  { name: 'Pelaporan SPT tahunan', weight: 14, short: 'Pelaporan SPT' },
-  { name: 'Login Coretax', weight: 12, short: 'Login Coretax' },
+  { name: 'Registrasi pangan olahan', weight: 32, short: 'Registrasi produk' },
+  { name: 'Izin edar kosmetik', weight: 24, short: 'Izin edar' },
+  { name: 'Sertifikat CPOB', weight: 18, short: 'Sertifikat CPOB' },
+  { name: 'Laporan efek samping obat', weight: 14, short: 'Efek samping obat' },
+  { name: 'Akun e-registration', weight: 12, short: 'Akun e-registration' },
 ];
 
 const ESCALATION_REASONS = [
   { reason: 'Foto identitas gagal divalidasi', priority: 'HIGH' },
   { reason: 'Tidak ditemukan pada knowledge base', priority: 'MED' },
   { reason: 'Memerlukan pengecekan data personal', priority: 'HIGH' },
-  { reason: 'Pengguna meminta keputusan pajak', priority: 'MED' },
+  { reason: 'Pengguna meminta penilaian keamanan produk', priority: 'MED' },
   { reason: 'Perlu verifikasi dokumen pendukung', priority: 'LOW' },
 ];
 
 /** Two or three lines per topic, enough for the detail panel to show a real exchange. */
 const TRANSCRIPTS = {
-  'Aktivasi akun Coretax': [
-    ['caller', 'Saya mau aktivasi akun Coretax, tapi foto saya selalu gagal.'],
+  'Registrasi pangan olahan': [
+    ['caller', 'Saya mau daftar izin edar pangan olahan, tapi berkas saya selalu ditolak.'],
     ['ai', 'Baik, saya cek panduan aktivasi akun yang sesuai.'],
     ['ai', 'Pastikan ukuran foto di bawah 2 MB dan wajah terlihat penuh.'],
   ],
-  'Kode otorisasi DJP': [
-    ['caller', 'Kode otorisasi saya tidak muncul di menu.'],
-    ['ai', 'Kode otorisasi terbit setelah profil wajib pajak lengkap.'],
+  'Izin edar kosmetik': [
+    ['caller', 'Izin edar saya tidak muncul di menu.'],
+    ['ai', 'Izin edar terbit setelah berkas registrasi lengkap dan lolos evaluasi.'],
     ['ai', 'Silakan cek menu Portal Saya lalu bagian Informasi Umum.'],
   ],
-  'Pembuatan kode billing': [
-    ['caller', 'Bagaimana cara membuat kode billing sendiri?'],
-    ['ai', 'Kode billing dibuat lewat menu Pembayaran lalu Buat Kode Billing.'],
-    ['ai', 'Masa aktif kode billing tersebut 30 hari sejak diterbitkan.'],
+  'Sertifikat CPOB': [
+    ['caller', 'Bagaimana cara mengajukan sertifikat CPOB?'],
+    ['ai', 'Pengajuan sertifikat CPOB dilakukan lewat aplikasi e-sertifikasi BPOM.'],
+    ['ai', 'Masa berlaku sertifikat tersebut lima tahun sejak diterbitkan.'],
   ],
-  'Pelaporan SPT tahunan': [
-    ['caller', 'SPT tahunan saya statusnya masih konsep.'],
-    ['ai', 'Konsep berarti SPT belum diposting dan belum dibayar.'],
+  'Laporan efek samping obat': [
+    ['caller', 'Berkas registrasi saya statusnya masih draf.'],
+    ['ai', 'Draf berarti berkas belum diajukan dan belum dievaluasi.'],
     ['ai', 'Saya bantu jelaskan langkah posting dan pembayarannya.'],
   ],
-  'Login Coretax': [
+  'Akun e-registration': [
     ['caller', 'Saya tidak bisa login, katanya kata sandi salah.'],
     ['ai', 'Silakan gunakan menu Lupa Kata Sandi pada halaman login.'],
     ['ai', 'Tautan atur ulang dikirim ke email terdaftar Anda.'],

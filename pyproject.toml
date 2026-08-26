@@ -3,9 +3,9 @@ requires = ["setuptools>=75"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "coretax-ai-agent"
+name = "bpom-ai-agent"
 version = "0.1.0"
-description = "Prototype AI agent berbasis knowledge base untuk layanan informasi Coretax."
+description = "Prototype AI agent berbasis knowledge base untuk layanan informasi BPOM."
 requires-python = ">=3.11"
 dependencies = [
   "beautifulsoup4>=4.12",

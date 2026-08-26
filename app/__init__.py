@@ -1,2 +1,2 @@
-"""Coretax AI Agent application package."""
+"""BPOM AI Agent application package."""
 

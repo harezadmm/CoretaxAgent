@@ -5,15 +5,15 @@ from app.knowledge import KnowledgeBase
 
 def test_knowledge_base_loads_and_finds_relevant_chunk(tmp_path: Path) -> None:
     (tmp_path / "panduan.md").write_text(
-        "# Panduan\n\n## Aktivasi akun\n\nAktivasi akun mengikuti panduan resmi.",
+        "# Panduan\n\n## Registrasi produk\n\nRegistrasi produk mengikuti panduan resmi.",
         encoding="utf-8",
     )
     knowledge_base = KnowledgeBase(tmp_path)
 
-    results = knowledge_base.search("Bagaimana aktivasi akun?", limit=2)
+    results = knowledge_base.search("Bagaimana registrasi produk?", limit=2)
 
     assert results
-    assert results[0].chunk.section == "Aktivasi akun"
+    assert results[0].chunk.section == "Registrasi produk"
     assert results[0].chunk.document == "panduan.md"
 
 
@@ -47,17 +47,19 @@ def test_front_matter_is_not_indexed_and_duplicate_chunks_are_removed(
 def test_negated_document_is_penalized_when_query_is_not_negated(
     tmp_path: Path,
 ) -> None:
+    # The pair has to differ only by the negation — that is the whole point of
+    # the test, and a rename that drops "bukan" quietly stops testing anything.
     (tmp_path / "pengguna.md").write_text(
-        "# Akses Coretax bagi pengguna DJP Online\n\nPanduan membuat kata sandi baru.",
+        "# Registrasi bagi pelaku usaha dalam negeri\n\nPanduan pengajuan izin edar produk lokal.",
         encoding="utf-8",
     )
     (tmp_path / "bukan-pengguna.md").write_text(
-        "# Akses Coretax bagi bukan pengguna DJP Online\n\nPanduan aktivasi akun.",
+        "# Registrasi bagi bukan pelaku usaha dalam negeri\n\nPanduan pengajuan izin edar produk impor.",
         encoding="utf-8",
     )
 
     results = KnowledgeBase(tmp_path).search(
-        "akses Coretax bagi pengguna DJP Online",
+        "registrasi bagi pelaku usaha dalam negeri",
         limit=2,
     )
 

@@ -60,7 +60,7 @@ def test_managed_document_can_be_created_updated_and_soft_deleted(
 
 
 def test_synced_official_document_is_read_only(tmp_path: Path) -> None:
-    official_dir = tmp_path / "coretaxpedia"
+    official_dir = tmp_path / "bpompedia"
     official_dir.mkdir()
     (official_dir / "aktivasi.md").write_text(
         "---\nsource_type: official_html\n---\n\n# Aktivasi\n\nPanduan resmi.",
@@ -106,7 +106,7 @@ def test_knowledge_management_api_crud_and_graph(
         "/api/knowledge/documents",
         json={
             "title": "FAQ Kode Billing",
-            "content": "Kode billing dibuat melalui menu pembayaran.",
+            "content": "Sertifikat CPOB dibuat melalui menu pembayaran.",
             "source_type": "faq",
             "status": "active",
             "tags": ["billing"],
@@ -126,7 +126,7 @@ def test_knowledge_management_api_crud_and_graph(
         f"/api/knowledge/documents/{document_id}",
         json={
             "title": "FAQ Kode Billing Baru",
-            "content": "Kode billing baru mengikuti menu pembayaran Coretax.",
+            "content": "Sertifikat CPOB baru mengikuti menu pembayaran BPOM.",
             "source_type": "faq",
             "status": "review",
             "tags": ["billing", "pembayaran"],

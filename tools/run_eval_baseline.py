@@ -6,7 +6,7 @@ import statistics
 import time
 from pathlib import Path
 
-from app.agent import CoretaxAgent
+from app.agent import BpomAgent
 from app.config import get_settings
 from app.knowledge import KnowledgeBase
 
@@ -36,7 +36,7 @@ def evaluate(cases: list[dict], knowledge_base: KnowledgeBase, min_score: float,
         bucket["total"] += 1
 
         start = time.perf_counter()
-        requires_human = CoretaxAgent._requires_human(case["question"])
+        requires_human = BpomAgent._requires_human(case["question"])
         results = [] if requires_human else knowledge_base.search(case["question"], limit=top_k)
         latencies_ms.append((time.perf_counter() - start) * 1000)
 
@@ -94,7 +94,7 @@ def evaluate(cases: list[dict], knowledge_base: KnowledgeBase, min_score: float,
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Jalankan baseline evaluasi retrieval Coretax AI Agent."
+        description="Jalankan baseline evaluasi retrieval BPOM AI Agent."
     )
     parser.add_argument(
         "--project-root",

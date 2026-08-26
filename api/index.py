@@ -1,4 +1,4 @@
-"""Vercel entrypoint for the Coretax FastAPI application."""
+"""Vercel entrypoint for the BPOM FastAPI application."""
 
 from app.main import app
 

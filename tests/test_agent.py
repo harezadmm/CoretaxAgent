@@ -2,12 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from app.agent import CoretaxAgent
+from app.agent import BpomAgent
 from app.config import Settings
 from app.knowledge import KnowledgeBase
 
 
-def make_agent(tmp_path: Path) -> CoretaxAgent:
+def make_agent(tmp_path: Path) -> BpomAgent:
     settings = Settings(
         llm_api_key=None,
         llm_model=None,
@@ -16,7 +16,7 @@ def make_agent(tmp_path: Path) -> CoretaxAgent:
         min_retrieval_score=0.12,
         max_context_docs=4,
     )
-    return CoretaxAgent(settings, KnowledgeBase(tmp_path))
+    return BpomAgent(settings, KnowledgeBase(tmp_path))
 
 
 def test_personal_request_is_escalated(tmp_path: Path) -> None:
@@ -78,18 +78,18 @@ def test_missing_source_is_escalated(tmp_path: Path) -> None:
 def test_retrieved_source_includes_official_url(tmp_path: Path) -> None:
     (tmp_path / "aktivasi.md").write_text(
         "---\n"
-        'source_url: "https://www.pajak.go.id/coretaxpedia/aktivasi"\n'
+        'source_url: "https://www.pajak.go.id/bpompedia/aktivasi"\n'
         'source_type: "official_html"\n'
         "---\n\n"
-        "# Aktivasi Akun\n\nPanduan resmi untuk melakukan aktivasi akun Coretax.",
+        "# Aktivasi Akun\n\nPanduan resmi untuk melakukan aktivasi akun BPOM.",
         encoding="utf-8",
     )
     agent = make_agent(tmp_path)
 
-    response = agent.ask("Bagaimana melakukan aktivasi akun Coretax?")
+    response = agent.ask("Bagaimana melakukan aktivasi akun BPOM?")
 
     assert response.sources
     assert response.sources[0].url == (
-        "https://www.pajak.go.id/coretaxpedia/aktivasi"
+        "https://www.pajak.go.id/bpompedia/aktivasi"
     )
     assert response.sources[0].source_type == "official_html"

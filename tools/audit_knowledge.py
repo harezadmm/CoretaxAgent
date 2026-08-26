@@ -10,16 +10,16 @@ from app.knowledge import KnowledgeBase
 
 MOJIBAKE_MARKERS = ("â€", "ï¬", "�")
 SAMPLE_QUERIES = (
-    "Bagaimana cara akses Coretax bagi pengguna DJP Online?",
-    "Bagaimana cara mendapatkan kode otorisasi DJP?",
-    "Bagaimana cara membuat kode billing mandiri?",
+    "Bagaimana cara registrasi pangan olahan?",
+    "Bagaimana cara mendapatkan izin edar kosmetik?",
+    "Bagaimana cara membuat sertifikat CPOB mandiri?",
     "Bagaimana cara melaporkan SPT tahunan orang pribadi?",
     "Bagaimana melakukan impersonate?",
 )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Audit knowledge base resmi Coretax.")
+    parser = argparse.ArgumentParser(description="Audit knowledge base resmi BPOM.")
     parser.add_argument(
         "--project-root",
         type=Path,
@@ -73,7 +73,7 @@ def main() -> None:
 
     print(
         f"Sumber resmi: {len(records)} "
-        f"(Coretax corpus: {len(base_records)}; regulasi DJP: {len(regulation_records)})"
+        f"(BPOM corpus: {len(base_records)}; regulasi BPOM: {len(regulation_records)})"
     )
     print(f"Jenis: {dict(type_counts)}")
     print(f"Status: {dict(status_counts)}")

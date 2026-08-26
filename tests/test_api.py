@@ -38,7 +38,7 @@ def test_dashboard_is_served() -> None:
     response = client.get("/")
 
     assert response.status_code == 200
-    assert "Coretax Agent" in response.text
+    assert "BPOM Agent" in response.text
 
 
 def test_non_ascii_stored_token_rejects_instead_of_crashing(configured_token) -> None:
@@ -74,7 +74,7 @@ def test_bom_and_padding_are_stripped_from_admin_token(monkeypatch) -> None:
 def test_personal_question_is_escalated_by_api() -> None:
     response = client.post(
         "/api/ask",
-        json={"question": "Tolong ubah data NPWP saya"},
+        json={"question": "Tolong ubah data registrasi produk kami"},
     )
 
     assert response.status_code == 200

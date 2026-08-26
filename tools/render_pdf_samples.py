@@ -6,9 +6,9 @@ import pymupdf
 
 
 SAMPLES = {
-    "panduan-ringkas": "panduan-ringkas-coretax-djp-pdf-*.pdf",
-    "aktivasi-akun": "panduan-aktivasi-akun-coretax-2025-*.pdf",
-    "kode-otorisasi": "panduan-kode-otorisasi-akun-coretax-2025-*.pdf",
+    "panduan-ringkas": "panduan-ringkas-bpom-pdf-*.pdf",
+    "aktivasi-akun": "panduan-aktivasi-akun-bpom-2025-*.pdf",
+    "kode-otorisasi": "panduan-kode-otorisasi-akun-bpom-2025-*.pdf",
 }
 
 

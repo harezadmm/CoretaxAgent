@@ -47,7 +47,7 @@ PERSONAL_OR_TRANSACTIONAL_PATTERNS = [
 ]
 
 
-class CoretaxAgent:
+class BpomAgent:
     def __init__(self, settings: Settings, knowledge_base: KnowledgeBase):
         self.settings = settings
         self.knowledge_base = knowledge_base
