@@ -1,9 +1,9 @@
 const TOKEN_STORAGE_KEY = 'bpom.ragAdminToken';
-// A sample of the corpus, not all of it. 20k chunks packed the sphere solid:
-// there was no gap left between dots for a link to be drawn in, and the mesh
-// was invisible no matter what alpha it used. 8k keeps the cloud dense while
-// leaving the background visible through it.
-const GRAPH_LIMIT = 8000;
+// One node per document. The chunk-level graph put 8k dots on screen, but every
+// chunk of a regulation wears that regulation's title, so selecting one lit a
+// twin somewhere else and reading it as a jump was fair. Documents are distinct
+// from each other, which is what makes the graph legible.
+const GRAPH_LIMIT = 2000;
 
 const SOURCE_LABELS = {
   official_regulation: 'Peraturan BPOM',
@@ -611,17 +611,6 @@ class RagGraph {
     const connected = new Set();
     if (selected) {
       connected.add(selected);
-      // Every chunk of a regulation carries that regulation's title, so hundreds
-      // of dots scattered across the sphere look identical. Selecting one lit a
-      // single dot while the cursor sat on a twin somewhere else, which reads as
-      // the graph jumping. Light the whole document instead: they open the same
-      // record anyway.
-      const parent = this.nodeMap.get(selected)?.document_id;
-      if (parent) {
-        for (const node of this.nodes) {
-          if (node.document_id === parent) connected.add(node.id);
-        }
-      }
       for (const edge of this.edges) {
         if (edge.source === selected) connected.add(edge.target);
         if (edge.target === selected) connected.add(edge.source);
@@ -1027,9 +1016,7 @@ export function mountRagManagement(root, notify = () => {}) {
   };
 
   const graphParams = () => {
-    // Chunks, not documents: 263 regulations hold 51k chunks, so a document
-    // graph drew 263 dots for the entire knowledge base.
-    const params = new URLSearchParams({ limit: String(GRAPH_LIMIT), unit: 'chunk' });
+    const params = new URLSearchParams({ limit: String(GRAPH_LIMIT) });
     if (state.query) params.set('q', state.query);
     if (state.sourceType !== 'all') params.set('source_type', state.sourceType);
     if (state.status !== 'all') params.set('status', state.status);
@@ -1125,10 +1112,8 @@ export function mountRagManagement(root, notify = () => {}) {
       button.classList.toggle('off', !state.graph.autoRotate);
       button.setAttribute('aria-pressed', String(state.graph.autoRotate));
     });
-    const shown = formatNumber(payload.displayed_documents);
-    const total = formatNumber(payload.total_chunks || payload.displayed_documents);
-    const suffix = payload.truncated ? ` · menampilkan ${shown} dari ${total}` : '';
-    root.querySelector('[data-rag-graph-summary]').textContent = `${formatNumber(payload.total_documents)} dokumen · ${total} chunk${suffix}`;
+    const suffix = payload.truncated ? ` · menampilkan ${formatNumber(payload.displayed_documents)}` : '';
+    root.querySelector('[data-rag-graph-summary]').textContent = `${formatNumber(payload.total_documents)} dokumen · ${formatNumber(payload.total_chunks)} chunk · ${formatNumber(payload.nodes.length)} node${suffix}`;
     if (!payload.displayed_documents) {
       graphState('<div class="rag-list-empty"><span>⌕</span><strong>Graph kosong</strong><p>Tidak ada memory yang cocok dengan filter ini.</p></div>', 'empty');
     } else {
