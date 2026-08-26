@@ -84,7 +84,7 @@ class KnowledgeMutationResponse(BaseModel):
 class KnowledgeGraphNode(BaseModel):
     id: str
     label: str
-    kind: Literal["root", "source", "topic", "document"]
+    kind: Literal["root", "source", "topic", "document", "chunk"]
     source_type: str | None = None
     status: str | None = None
     document_id: str | None = None

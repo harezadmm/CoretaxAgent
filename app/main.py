@@ -166,12 +166,14 @@ def knowledge_graph(
     source_type: Annotated[str | None, Query(max_length=64)] = None,
     status_filter: Annotated[str | None, Query(alias="status", max_length=32)] = None,
     limit: Annotated[int, Query(ge=100, le=20_000)] = 700,
+    unit: Annotated[str, Query(pattern="^(document|chunk)$")] = "document",
 ) -> KnowledgeGraphResponse:
     return knowledge_manager.graph(
         query=q,
         source_type=source_type,
         status=status_filter,
         limit=limit,
+        unit=unit,
     )
 
 

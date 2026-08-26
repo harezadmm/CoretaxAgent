@@ -568,6 +568,101 @@ class KnowledgeManager:
                 cursor += 1
         return selected
 
+    def _chunk_graph(
+        self,
+        records: list[DocumentRecord],
+        limit: int,
+    ) -> KnowledgeGraphResponse:
+        """Plot retrieval chunks instead of documents.
+
+        A document node map understates this corpus badly: 263 regulations hold
+        51,482 chunks, so the graph drew 263 dots for the whole knowledge base.
+        Chunks are the unit retrieval actually works in, and there are enough of
+        them to show the shape of what the agent can reach.
+
+        Node payload is deliberately lean. At the document node's size a 20,000
+        node graph is 11MB of JSON; trimming to id, short label and parent gets
+        the same node count under the payload the old tax graph already shipped.
+        """
+        by_file = {Path(record.relative_path).name: record for record in records}
+        wanted = set(by_file)
+
+        nodes: list[KnowledgeGraphNode] = [
+            KnowledgeGraphNode(
+                id="rag-root",
+                label="BPOM RAG Memory",
+                kind="root",
+                size=10,
+                count=len(records),
+            )
+        ]
+        edges: list[KnowledgeGraphEdge] = []
+
+        source_counts = Counter(record.source_type for record in records)
+        for source_name, count in sorted(source_counts.items()):
+            nodes.append(
+                KnowledgeGraphNode(
+                    id=f"source:{source_name}",
+                    label=source_name.replace("_", " ").title(),
+                    kind="source",
+                    source_type=source_name,
+                    size=5 + min(5, math.log2(count + 1)),
+                    count=count,
+                )
+            )
+            edges.append(
+                KnowledgeGraphEdge(
+                    source="rag-root",
+                    target=f"source:{source_name}",
+                    kind="contains",
+                    weight=max(1, math.log2(count + 1)),
+                )
+            )
+
+        emitted = 0
+        for index, chunk in enumerate(self.knowledge_base.chunks):
+            if emitted >= limit:
+                break
+            record = by_file.get(chunk.document)
+            if record is None or chunk.document not in wanted:
+                continue
+            # Every BPOM regulation carries a single "Isi peraturan" heading, so
+            # the section name labels all 51k chunks identically. The parent
+            # title is the only thing that tells a reader what they are hovering.
+            label = record.title if len(chunk.section) < 4 or chunk.section == "Isi peraturan" else chunk.section
+            nodes.append(
+                KnowledgeGraphNode(
+                    id=f"c{index}",
+                    label=label[:60],
+                    kind="chunk",
+                    source_type=record.source_type,
+                    status=record.status,
+                    # Selecting a chunk opens the regulation it came from; the
+                    # inspector has no notion of a fragment.
+                    document_id=record.id,
+                    size=1.1 + min(3.2, math.log2(len(chunk.content) + 2) * 0.28),
+                )
+            )
+            edges.append(
+                KnowledgeGraphEdge(
+                    source=f"source:{record.source_type}",
+                    target=f"c{index}",
+                    kind="contains",
+                    weight=1.0,
+                )
+            )
+            emitted += 1
+
+        total_chunks = sum(record.chunk_count for record in records)
+        return KnowledgeGraphResponse(
+            nodes=nodes,
+            edges=edges,
+            total_documents=len(records),
+            displayed_documents=emitted,
+            total_chunks=total_chunks,
+            truncated=emitted < total_chunks,
+        )
+
     def graph(
         self,
         *,
@@ -575,12 +670,15 @@ class KnowledgeManager:
         source_type: str | None = None,
         status: str | None = None,
         limit: int = 700,
+        unit: str = "document",
     ) -> KnowledgeGraphResponse:
         records = [
             record
             for record in self._snapshot().values()
             if self._matches(record, query.strip(), source_type, status)
         ]
+        if unit == "chunk":
+            return self._chunk_graph(records, limit)
         selected = self._balanced_sample(records, limit)
         source_counts = Counter(record.source_type for record in records)
         nodes: list[KnowledgeGraphNode] = [

@@ -192,6 +192,10 @@ class RagGraph {
   setData(payload) {
     this.nodes = payload.nodes.map((node) => ({
       ...node,
+      // The renderer's "document" kind means a clickable leaf dot. A chunk is
+      // one, and it already carries its parent's document_id, so the inspector
+      // keeps working untouched.
+      kind: node.kind === 'chunk' ? 'document' : node.kind,
       bx: 0, by: 0, bz: 0,
       sx: 0, sy: 0, near: 0, persp: 1,
     }));
@@ -286,7 +290,14 @@ class RagGraph {
 
     const mesh = [];
     const seen = new Set();
-    for (const node of documents) {
+    // One link per dot is affordable at a few thousand nodes and not at twenty
+    // thousand: the mesh alone costs a frame more than the dots do, and at that
+    // density it reads as haze rather than structure. Thin it so the line count
+    // stays flat as the corpus grows.
+    const stride = Math.max(1, Math.ceil(documents.length / 6000));
+    for (let index = 0; index < documents.length; index += 1) {
+      if (index % stride !== 0) continue;
+      const node = documents[index];
       const cx = Math.round(node.bx / cell);
       const cy = Math.round(node.by / cell);
       const cz = Math.round(node.bz / cell);
@@ -948,7 +959,9 @@ export function mountRagManagement(root, notify = () => {}) {
   };
 
   const graphParams = () => {
-    const params = new URLSearchParams({ limit: String(GRAPH_LIMIT) });
+    // Chunks, not documents: 263 regulations hold 51k chunks, so a document
+    // graph drew 263 dots for the entire knowledge base.
+    const params = new URLSearchParams({ limit: String(GRAPH_LIMIT), unit: 'chunk' });
     if (state.query) params.set('q', state.query);
     if (state.sourceType !== 'all') params.set('source_type', state.sourceType);
     if (state.status !== 'all') params.set('status', state.status);
@@ -1044,8 +1057,10 @@ export function mountRagManagement(root, notify = () => {}) {
       button.classList.toggle('off', !state.graph.autoRotate);
       button.setAttribute('aria-pressed', String(state.graph.autoRotate));
     });
-    const suffix = payload.truncated ? ` · menampilkan sampel ${formatNumber(payload.displayed_documents)}` : '';
-    root.querySelector('[data-rag-graph-summary]').textContent = `${formatNumber(payload.total_documents)} dokumen · ${formatNumber(payload.nodes.length)} nodes${suffix}`;
+    const shown = formatNumber(payload.displayed_documents);
+    const total = formatNumber(payload.total_chunks || payload.displayed_documents);
+    const suffix = payload.truncated ? ` · menampilkan ${shown} dari ${total}` : '';
+    root.querySelector('[data-rag-graph-summary]').textContent = `${formatNumber(payload.total_documents)} dokumen · ${total} chunk${suffix}`;
     if (!payload.displayed_documents) {
       graphState('<div class="rag-list-empty"><span>⌕</span><strong>Graph kosong</strong><p>Tidak ada memory yang cocok dengan filter ini.</p></div>', 'empty');
     } else {
