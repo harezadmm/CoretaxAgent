@@ -204,3 +204,15 @@ button,input{ font:inherit; } button{ cursor:pointer; } .app-shell{ display:flex
 .scale-presets button:hover{ border-color:var(--cyan); color:var(--cyan); }
 
 .outline-button.icon-only{ width:30px; padding:9px 0; text-align:center; }
+
+/* Licence credit under the office floor. Small, but it has to be on the page:
+   the Modern Interiors licence requires a visible link back to the author. */
+.office-credit {
+  margin: 10px 2px 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.office-credit a {
+  color: var(--accent-cyan, #52d7e8);
+}

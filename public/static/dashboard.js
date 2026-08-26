@@ -65,7 +65,8 @@ function screenStat(label, value, note, tone = 'cyan') {
 }
 
 const officeShell = () => `${screenHeader('LIVE OPERATIONS FLOOR', 'Virtual Office', 'Visualisasi real-time kantor call center BPOM: meja agent AI menjawab panggilan, kasus yang tidak bisa dijawab diantar ke meja petugas untuk ditindaklanjuti pada jam kerja.')}
-  <div id="office-mount" class="office-mount"><p class="subtle office-hint">Memuat kantor…</p></div>`;
+  <div id="office-mount" class="office-mount"><p class="subtle office-hint">Memuat kantor…</p></div>
+  <p class="subtle office-credit">Sprite lantai, meja, monitor, dan kursi: <a href="https://limezu.itch.io/moderninteriors" target="_blank" rel="noopener noreferrer">Modern Interiors oleh LimeZu</a> — kredit diwajibkan lisensinya. Sisanya: <a href="https://github.com/pixel-agents-hq/pixel-agents" target="_blank" rel="noopener noreferrer">pixel-agents</a> (MIT).</p>`;
 
 const screenTemplates = {
   live: () => `${screenHeader('REAL-TIME OPERATIONS', 'Live Calls', 'Pantau percakapan yang sedang berjalan dan ambil alih jika AI membutuhkan bantuan.', '<button class="primary-button" data-action="simulate-call">＋ Simulate incoming call</button>')}

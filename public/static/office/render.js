@@ -62,9 +62,27 @@ export function createRenderer(canvas, assets) {
   let deviceHeight = 0;
 
   /** Stable per-tile floor variant, so the floor has texture but never shimmers. */
-  function floorVariant(col, row) {
+  function floorVariant(col, row, tile) {
+    // Zones used to be painted with a recoloured carpet laid over the floor,
+    // which is what kept the working area almost black. They get their own floor
+    // block now, so each zone reads apart in the artwork's own colours.
+    const zone = assets.floorZones
+      ? (tile === TILE.CARPET_AI && assets.floorZones.ai)
+        || (tile === TILE.CARPET_STAFF && assets.floorZones.staff)
+        || null
+      : null;
+    const set = zone || assets.floors;
+
+    // A patterned floor is one block cut into tiles, not a set of interchangeable
+    // variants: its pieces only line up when laid down by position. Hashing them
+    // shreds the pattern into noise.
+    const pattern = assets.floorPattern;
+    if (pattern) {
+      const [wide, tall] = pattern;
+      return set[(row % tall) * wide + (col % wide)];
+    }
     const hash = (col * 73856093) ^ (row * 19349663);
-    return assets.floors[Math.abs(hash) % assets.floors.length];
+    return set[Math.abs(hash) % set.length];
   }
 
   function mapSize() {
@@ -248,9 +266,11 @@ export function createRenderer(canvas, assets) {
       for (let col = 0; col < layout.cols; col += 1) {
         const tile = tileAt(layout, col, row);
         if (tile === TILE.VOID) continue;
-        drawSprite(floorVariant(col, row), col * TILE_SIZE, row * TILE_SIZE);
+        drawSprite(floorVariant(col, row, tile), col * TILE_SIZE, row * TILE_SIZE);
 
-        if (isCarpetTile(tile)) {
+        // Zone floors carry their own colour, so the carpet overlay is only
+        // drawn for the older greyscale sheets that had nothing else to say.
+        if (!assets.floorZones && isCarpetTile(tile)) {
           const pieces = tile === TILE.CARPET_AI ? assets.carpets.ai : assets.carpets.staff;
           const mask = neighbourMask(layout, col, row, (neighbour) => neighbour === tile);
           drawSprite(pieces[mask], col * TILE_SIZE, row * TILE_SIZE);

@@ -1,6 +1,38 @@
 # Office sprite attribution
 
-Every PNG in this directory — characters, floors, walls, carpets, and furniture —
+The artwork here comes from two places.
+
+## Modern Interiors by LimeZu
+
+The floors, the desks, the monitors and the desk chair are cut from **Modern
+Interiors — RPG Tileset [16x16]** by **LimeZu**, https://limezu.itch.io/ —
+credit is a condition of that licence.
+
+The licence permits editing the pack and using it in any project, commercial or
+not, and forbids reselling or distributing the pack itself. So only the tiles
+this office actually draws are here, cut by
+[`tools/build_office_assets_limezu.py`](../../../../tools/build_office_assets_limezu.py)
+from sheets kept outside the repository. The pack is not redistributed, and the
+sheets are not committed. Re-cut them with:
+
+```bash
+python tools/build_office_assets_limezu.py <folder-with-the-limezu-sheets>
+```
+
+Which tiles to cut is not guesswork: the reference project ships its floor as a
+Tiled map, so every desk, monitor and stool in it carries a recorded tile id.
+Those ids are transcribed in the script.
+
+Files: `floors/*`, `furniture/DESK/DESK_FRONT.png`,
+`furniture/PC/PC_FRONT_*.png`, `furniture/WOODEN_CHAIR/WOODEN_CHAIR_FRONT.png`.
+
+The pack has two monitor states and the renderer wants three busy frames, so the
+lit screen is scrolled to make the third — the script finds the screen by
+diffing the lit sprite against the dark one rather than inventing pixels.
+
+## pixel-agents
+
+Everything else — characters, walls, carpets, and the rest of the furniture —
 comes from **[pixel-agents](https://github.com/pixel-agents-hq/pixel-agents)** by
 pixel-agents-hq, used unmodified under the MIT License.
 

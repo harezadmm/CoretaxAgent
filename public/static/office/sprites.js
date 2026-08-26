@@ -182,16 +182,32 @@ async function buildOfficeAssets(base) {
     return response.json();
   });
 
+  // Sprite filenames are stable, and the assets route caches them for a day with
+  // a week of stale-while-revalidate on top. Recutting a sheet therefore changes
+  // nothing a browser can see. The catalogue carries a digest of the artwork;
+  // hanging it off every sprite URL is what makes a recut actually land.
+  const stamp = catalog.version ? `?v=${encodeURIComponent(catalog.version)}` : '';
+
   const [floorImages, carpetImages, wallImages, characterImages] = await Promise.all([
-    Promise.all(catalog.floors.map((file) => loadImage(`${base}/floors/${file}`))),
-    Promise.all(catalog.carpets.map((file) => loadImage(`${base}/carpets/${file}`))),
-    Promise.all(catalog.walls.map((file) => loadImage(`${base}/walls/${file}`))),
-    Promise.all(catalog.character.files.map((file) => loadImage(`${base}/characters/${file}`))),
+    Promise.all(catalog.floors.map((file) => loadImage(`${base}/floors/${file}${stamp}`))),
+    Promise.all(catalog.carpets.map((file) => loadImage(`${base}/carpets/${file}${stamp}`))),
+    Promise.all(catalog.walls.map((file) => loadImage(`${base}/walls/${file}${stamp}`))),
+    Promise.all(catalog.character.files.map((file) => loadImage(`${base}/characters/${file}${stamp}`))),
   ]);
+
+  const zoneNames = Object.keys(catalog.floorZones || {});
+  const zoneImages = await Promise.all(
+    zoneNames.map((zone) =>
+      Promise.all(catalog.floorZones[zone].map((file) => loadImage(`${base}/floors/${file}${stamp}`))),
+    ),
+  );
+  const zoneFloors = zoneNames.length
+    ? Object.fromEntries(zoneNames.map((zone, index) => [zone, zoneImages[index]]))
+    : null;
 
   const furnitureEntries = Object.entries(catalog.assets);
   const furnitureImages = await Promise.all(
-    furnitureEntries.map(([, asset]) => loadImage(`${base}/${asset.file}`)),
+    furnitureEntries.map(([, asset]) => loadImage(`${base}/${asset.file}${stamp}`)),
   );
 
   const furniture = new Map();
@@ -207,8 +223,19 @@ async function buildOfficeAssets(base) {
 
   return {
     catalog,
-    /** Tinted 16x16 floor variants. */
-    floors: floorImages.map((image) => tint(image, TINTS.floor)),
+    /**
+     * 16x16 floor tiles. The greyscale sheets are recoloured to the dashboard
+     * palette; full-colour artwork is left alone, because ramping it against its
+     * own luminance would throw the colour away and hand back a grey floor.
+     */
+    floors:
+      catalog.floorsTinted === false
+        ? floorImages
+        : floorImages.map((image) => tint(image, TINTS.floor)),
+    /** Set when the floor tiles form one block that has to be laid by position. */
+    floorPattern: catalog.floorPattern || null,
+    /** Per-zone floor blocks, drawn instead of a recoloured carpet. */
+    floorZones: zoneFloors,
     /** Bitmask-indexed 16x32 wall pieces. */
     walls: sliceBitmaskSheet(tint(wallImages[0], TINTS.wall), SHEET.wall),
     /** Bitmask-indexed 16x16 carpet pieces, one recolour per zone. */

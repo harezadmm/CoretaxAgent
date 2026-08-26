@@ -38,12 +38,7 @@
     "floor_0.png",
     "floor_1.png",
     "floor_2.png",
-    "floor_3.png",
-    "floor_4.png",
-    "floor_5.png",
-    "floor_6.png",
-    "floor_7.png",
-    "floor_8.png"
+    "floor_3.png"
   ],
   "carpets": [
     "carpet_0.png",
@@ -438,9 +433,9 @@
     },
     "PC_FRONT_ON_1": {
       "file": "furniture/PC/PC_FRONT_ON_1.png",
-      "w": 16,
+      "w": 32,
       "h": 32,
-      "fw": 1,
+      "fw": 2,
       "fh": 2,
       "orientation": "front",
       "state": "on",
@@ -448,9 +443,9 @@
     },
     "PC_FRONT_ON_2": {
       "file": "furniture/PC/PC_FRONT_ON_2.png",
-      "w": 16,
+      "w": 32,
       "h": 32,
-      "fw": 1,
+      "fw": 2,
       "fh": 2,
       "orientation": "front",
       "state": "on",
@@ -458,9 +453,9 @@
     },
     "PC_FRONT_ON_3": {
       "file": "furniture/PC/PC_FRONT_ON_3.png",
-      "w": 16,
+      "w": 32,
       "h": 32,
-      "fw": 1,
+      "fw": 2,
       "fh": 2,
       "orientation": "front",
       "state": "on",
@@ -468,9 +463,9 @@
     },
     "PC_FRONT_OFF": {
       "file": "furniture/PC/PC_FRONT_OFF.png",
-      "w": 16,
+      "w": 32,
       "h": 32,
-      "fw": 1,
+      "fw": 2,
       "fh": 2,
       "orientation": "front",
       "state": "off"
@@ -611,5 +606,36 @@
       "fh": 2,
       "orientation": "side"
     }
+  },
+  "floorPattern": [
+    2,
+    2
+  ],
+  "floorsTinted": false,
+  "limezu": {
+    "pack": "Modern Interiors - RPG Tileset [16X16] by LimeZu",
+    "credit": "https://limezu.itch.io/moderninteriors",
+    "note": "Only the tiles this office draws are vendored, cut by tools/build_office_assets_limezu.py. The pack is not redistributed.",
+    "covers": [
+      "floors",
+      "DESK_FRONT",
+      "WOODEN_CHAIR_FRONT",
+      "PC_FRONT_*"
+    ]
+  },
+  "version": "d267af8ea09e",
+  "floorZones": {
+    "ai": [
+      "ai_0.png",
+      "ai_1.png",
+      "ai_2.png",
+      "ai_3.png"
+    ],
+    "staff": [
+      "staff_0.png",
+      "staff_1.png",
+      "staff_2.png",
+      "staff_3.png"
+    ]
   }
 }

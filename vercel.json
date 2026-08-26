@@ -15,6 +15,13 @@
       "continue": true
     },
     {
+      "src": "/static/assets/office/catalog\\.json",
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate"
+      },
+      "continue": true
+    },
+    {
       "src": "/static/assets/(.*)",
       "headers": {
         "cache-control": "public, max-age=86400, stale-while-revalidate=604800"
