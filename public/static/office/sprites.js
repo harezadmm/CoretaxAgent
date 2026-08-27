@@ -23,11 +23,11 @@ const SHEET = {
  * into the same near-black.
  */
 export const TINTS = {
-  // The old range topped out at #242c34, which is close enough to the page
+  // The old range topped out at #1e293a, which is close enough to the page
   // background that the floor tiles read as one flat fill and their texture
   // disappears entirely. Lift both ends so the pattern is actually visible.
-  floor: { dark: '#1f262e', light: '#3a4550' },
-  wall: { dark: '#0a0d10', light: '#39434d' },
+  floor: { dark: '#1a2433', light: '#30415a' },
+  wall: { dark: '#090c11', light: '#303f56' },
   carpetAi: { dark: '#0d2b31', light: '#1d5560' },
   carpetStaff: { dark: '#2c2113', light: '#5a4522' },
 };

@@ -29,8 +29,8 @@
 
 .rag-local-badge{
   color:var(--green);
-  border:1px solid #32755f;
-  background:#46d7a610;
+  border:1px solid #327552;
+  background:#46d78c10;
   border-radius:999px;
   padding:7px 9px;
   font-size:8px;
@@ -46,9 +46,9 @@
 .rag-stats article{
   min-width:0;
   padding:11px 13px;
-  border:1px solid #232c32;
+  border:1px solid #1d2838;
   border-radius:7px;
-  background:linear-gradient(145deg,#11161b,#0a0e11);
+  background:linear-gradient(145deg,#0f151d,#090d12);
   position:relative;
   overflow:hidden;
 }
@@ -105,10 +105,10 @@
      ignored an inline height on this item. */
   height:var(--rag-workspace-height, calc((100vh - 372px) / var(--ui-scale,1)));
   min-height:430px;
-  border:1px solid #273139;
+  border:1px solid #202d40;
   border-radius:9px;
   overflow:hidden;
-  background:#080b0e;
+  background:#070a0f;
   box-shadow:0 24px 70px #0008;
 }
 
@@ -116,7 +116,7 @@
   display:grid;
   grid-template-rows:auto minmax(0,1fr) auto;
   min-width:0;
-  background:#080b0e;
+  background:#070a0f;
 }
 
 .rag-toolbar{
@@ -125,8 +125,8 @@
   gap:7px;
   min-width:0;
   padding:10px 12px;
-  border-bottom:1px solid #222b31;
-  background:linear-gradient(180deg,#11161b,#0d1216);
+  border-bottom:1px solid #1c2737;
+  background:linear-gradient(180deg,#0f151d,#0c1017);
 }
 
 .rag-search,.rag-side-search{
@@ -134,9 +134,9 @@
   align-items:center;
   gap:7px;
   min-width:150px;
-  border:1px solid #2d3940;
+  border:1px solid #253348;
   border-radius:5px;
-  background:#090d10;
+  background:#080c11;
   color:#6f7d86;
 }
 
@@ -157,11 +157,11 @@
 
 .rag-toolbar select{
   max-width:165px;
-  border:1px solid #2d3940;
+  border:1px solid #253348;
   border-radius:5px;
   outline:0;
   color:#c9d3d6;
-  background:#10151a;
+  background:#0e141c;
   padding:7px 24px 7px 8px;
   font-size:8px;
 }
@@ -169,10 +169,10 @@
 .rag-tool-button,.rag-graph-controls button,.rag-manager-head button{
   display:grid;
   place-items:center;
-  border:1px solid #35444c;
+  border:1px solid #2c3c55;
   border-radius:5px;
   color:#cdd7d9;
-  background:#12171d;
+  background:#10161f;
 }
 
 .rag-tool-button{
@@ -192,8 +192,8 @@
   isolation:isolate;
   background:
     radial-gradient(circle at 50% 46%,#15273a33 0,transparent 36%),
-    linear-gradient(#181f2755 1px,transparent 1px),
-    linear-gradient(90deg,#181f2755 1px,transparent 1px),
+    linear-gradient(#151d2a55 1px,transparent 1px),
+    linear-gradient(90deg,#151d2a55 1px,transparent 1px),
     #070a0d;
   background-size:auto,28px 28px,28px 28px,auto;
 }
@@ -287,9 +287,9 @@
   justify-content:space-between;
   gap:10px;
   padding:8px 12px;
-  border-top:1px solid #1e282e;
+  border-top:1px solid #192333;
   color:#64737c;
-  background:#0b0f13;
+  background:#0a0e14;
   font-size:8px;
 }
 
@@ -308,8 +308,8 @@
   min-width:0;
   min-height:0;
   overflow:hidden;
-  border-left:1px solid #273139;
-  background:linear-gradient(180deg,#10151a,#0a0e11);
+  border-left:1px solid #202d40;
+  background:linear-gradient(180deg,#0e141c,#090d12);
 }
 
 .rag-manager-head{
@@ -338,10 +338,10 @@
 .rag-document-list{
   min-height:0;
   overflow:auto;
-  border-top:1px solid #202a30;
-  border-bottom:1px solid #202a30;
+  border-top:1px solid #1a2536;
+  border-bottom:1px solid #1a2536;
   scrollbar-width:thin;
-  scrollbar-color:#35444c transparent;
+  scrollbar-color:#2c3c55 transparent;
 }
 
 .rag-document-item{
@@ -352,14 +352,14 @@
   width:100%;
   padding:10px 12px;
   border:0;
-  border-bottom:1px solid #1d252b;
+  border-bottom:1px solid #182230;
   color:#dce5e7;
   background:transparent;
   text-align:left;
 }
 
 .rag-document-item:hover,.rag-document-item.selected{
-  background:#172029;
+  background:#151e2b;
 }
 
 .rag-document-item.selected{
@@ -404,7 +404,7 @@
 
 .rag-status{
   padding:3px 4px;
-  border:1px solid #3d4b52;
+  border:1px solid #33435c;
   border-radius:3px;
   color:#9aa7ad;
   font-size:6px;
@@ -412,14 +412,14 @@
   white-space:nowrap;
 }
 
-.rag-status.active{color:var(--green);border-color:#286b59}.rag-status.review,.rag-status.warning{color:var(--amber);border-color:#765828}.rag-status.repealed{color:var(--red);border-color:#754040}.rag-status.superseded{color:var(--violet);border-color:#554a82}
+.rag-status.active{color:var(--green);border-color:#286b48}.rag-status.review,.rag-status.warning{color:var(--amber);border-color:#765828}.rag-status.repealed{color:var(--red);border-color:#754040}.rag-status.superseded{color:var(--violet);border-color:#554a82}
 
 .rag-pagination{
   display:flex;
   align-items:center;
   justify-content:space-between;
   padding:7px 12px;
-  border-bottom:1px solid #202a30;
+  border-bottom:1px solid #1a2536;
   color:#718089;
   font-size:8px;
 }
@@ -427,10 +427,10 @@
 .rag-pagination button{
   width:24px;
   height:22px;
-  border:1px solid #303d44;
+  border:1px solid #28364c;
   border-radius:4px;
   color:#b9c4c7;
-  background:#11161b;
+  background:#0f151d;
 }
 
 .rag-pagination button:disabled{
@@ -443,7 +443,7 @@
   padding:13px 14px 15px;
   overflow:auto;
   scrollbar-width:thin;
-  scrollbar-color:#35444c transparent;
+  scrollbar-color:#2c3c55 transparent;
 }
 
 .rag-inspector-empty,.rag-list-empty{
@@ -477,10 +477,10 @@
 
 .rag-list-empty button{
   margin-top:10px;
-  border:1px solid #35475a;
+  border:1px solid #2f4360;
   border-radius:4px;
   color:var(--cyan);
-  background:#10161c;
+  background:#0f151d;
   padding:6px 8px;
   font-size:8px;
 }
@@ -534,9 +534,9 @@
 
 .rag-detail-grid div{
   padding:7px;
-  border:1px solid #222e34;
+  border:1px solid #1c283a;
   border-radius:4px;
-  background:#0a0e12;
+  background:#090d13;
 }
 
 .rag-detail-grid span,.rag-detail-grid strong{
@@ -566,7 +566,7 @@
 
 .rag-tags span{
   padding:3px 5px;
-  border:1px solid #324148;
+  border:1px solid #293951;
   border-radius:999px;
   color:#8fa0a7;
   font-size:6px;
@@ -577,7 +577,7 @@
   margin:0;
   padding:9px;
   overflow:auto;
-  border:1px solid #222d33;
+  border:1px solid #1c2839;
   border-radius:4px;
   color:#9facb2;
   background:#080c0f;
@@ -611,10 +611,10 @@
 }
 
 .rag-inspector-actions a,.rag-inspector-actions button{
-  border:1px solid #33434a;
+  border:1px solid #2a3a53;
   border-radius:4px;
   color:#b9c6ca;
-  background:#11161c;
+  background:#0f151e;
   padding:6px 8px;
   font-size:7px;
   text-decoration:none;
@@ -643,7 +643,7 @@
 .rag-spinner{
   width:15px;
   height:15px;
-  border:2px solid #232f3b;
+  border:2px solid #1f2c3f;
   border-top-color:var(--cyan);
   border-radius:50%;
   animation:ragSpin .8s linear infinite;
@@ -657,9 +657,9 @@
   max-width:520px;
   margin:70px auto;
   padding:38px;
-  border:1px solid #2a3940;
+  border:1px solid #233147;
   border-radius:10px;
-  background:linear-gradient(145deg,#12171d,#090d10);
+  background:linear-gradient(145deg,#10161f,#080c11);
   box-shadow:0 24px 70px #0008;
   text-align:center;
 }
@@ -711,11 +711,11 @@
 .rag-access-card input,.rag-editor-form input,.rag-editor-form select,.rag-editor-form textarea{
   width:100%;
   margin-top:6px;
-  border:1px solid #303e45;
+  border:1px solid #28374d;
   border-radius:5px;
   outline:0;
   color:#e0e9eb;
-  background:#0a0e12;
+  background:#090d13;
   padding:9px 10px;
   font-size:9px;
 }
@@ -726,16 +726,16 @@
 }
 
 .rag-ghost-button,.rag-danger-button{
-  border:1px solid #34434a;
+  border:1px solid #2b3b53;
   border-radius:5px;
   color:#bdc8cb;
-  background:#11161b;
+  background:#0f151d;
   padding:8px 10px;
   font-size:8px;
 }
 
 .rag-danger-button{
-  color:#120a0a;
+  color:#090d13;
   border-color:#ff7b7b;
   background:#ff7b7b;
 }
@@ -745,10 +745,10 @@
   max-height:calc(100vh - 34px);
   padding:0;
   overflow:auto;
-  border:1px solid #334249;
+  border:1px solid #2a3a52;
   border-radius:9px;
   color:var(--text);
-  background:#0c1014;
+  background:#0b0f15;
   box-shadow:0 30px 100px #000d;
 }
 
@@ -767,7 +767,7 @@
   justify-content:space-between;
   gap:12px;
   padding-bottom:14px;
-  border-bottom:1px solid #253037;
+  border-bottom:1px solid #1f2b3d;
 }
 
 .rag-dialog-head h3{
@@ -778,10 +778,10 @@
 .rag-dialog-head>button{
   width:28px;
   height:28px;
-  border:1px solid #344149;
+  border:1px solid #2b3b52;
   border-radius:5px;
   color:#aab6ba;
-  background:#11171a;
+  background:#0e141d;
   font-size:15px;
 }
 
@@ -901,7 +901,7 @@
 
 @media(max-width:1000px){
   .rag-workspace{grid-template-columns:1fr;overflow:visible}
-  .rag-manager{max-height:none;border-top:1px solid #273139;border-left:0;grid-template-rows:auto auto 340px auto minmax(250px,auto)}
+  .rag-manager{max-height:none;border-top:1px solid #202d40;border-left:0;grid-template-rows:auto auto 340px auto minmax(250px,auto)}
   .rag-stats{grid-template-columns:repeat(2,1fr)}
 }
 
@@ -931,14 +931,14 @@
 .rag-resize-handle{
   display:flex; align-items:center; justify-content:center;
   height:15px; margin-top:-1px;
-  border:1px solid #273139; border-top:0; border-radius:0 0 9px 9px;
-  background:linear-gradient(180deg,#0d1216,#090c0f);
+  border:1px solid #202d40; border-top:0; border-radius:0 0 9px 9px;
+  background:linear-gradient(180deg,#0c1017,#080b10);
   cursor:ns-resize; touch-action:none; user-select:none;
 }
-.rag-resize-handle span{ display:block; width:46px; height:3px; border-radius:2px; background:#3b4750; transition:background .15s,width .15s; }
+.rag-resize-handle span{ display:block; width:46px; height:3px; border-radius:2px; background:#31415a; transition:background .15s,width .15s; }
 .rag-resize-handle:hover span,.rag-resize-handle:focus-visible span{ width:70px; background:var(--cyan,#529de8); }
 .rag-resize-handle:focus-visible{ outline:1px solid var(--cyan,#529de8); outline-offset:1px; }
 .rag-resize-handle.dragging{ border-color:#3d4e60; }
 .rag-resize-handle.dragging span{ width:70px; background:var(--cyan,#529de8); }
 
-.rag-tool-button[data-rag-spin].off{ color:#5d6a74; border-color:#2c353b; }
+.rag-tool-button[data-rag-spin].off{ color:#5d6a74; border-color:#253142; }

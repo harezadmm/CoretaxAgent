@@ -45,7 +45,7 @@ const PILE = { x: 10, baseY: 24, width: 12, step: 1.6, maxVisible: 7 };
 const BUBBLE_STYLE = {
   call: { fill: '#529de8', glyph: 'phone' },
   search: { fill: '#a590ff', glyph: 'search' },
-  answer: { fill: '#46d7a6', glyph: 'wave' },
+  answer: { fill: '#46d78c', glyph: 'wave' },
   escalate: { fill: '#ffb248', glyph: 'doc' },
   case: { fill: '#ffb248', glyph: 'doc' },
 };
@@ -443,7 +443,7 @@ export function createRenderer(canvas, assets) {
   function draw(simState, options = {}) {
     layout = simState.layout;
     context.imageSmoothingEnabled = false;
-    context.fillStyle = '#07090b';
+    context.fillStyle = '#06080c';
     context.fillRect(0, 0, deviceWidth, deviceHeight);
 
     const now = options.now ?? 0;

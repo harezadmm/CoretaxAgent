@@ -22,7 +22,7 @@ const SOURCE_LABELS = {
 // becomes indistinguishable from its status.
 const SOURCE_COLORS = {
   official_regulation: '#539ce5',
-  official_html: '#46d7a6',
+  official_html: '#46d78c',
   official_pdf: '#a590ff',
   curated: '#f5de70',
   curated_official_synthesis: '#f5de70',
