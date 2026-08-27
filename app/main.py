@@ -26,6 +26,7 @@ from app.schemas import (
     KnowledgeDocumentPage,
     KnowledgeGraphResponse,
     KnowledgeMutationResponse,
+    KnowledgeStats,
 )
 
 
@@ -68,6 +69,17 @@ def health() -> dict[str, object]:
             settings.llm_api_key and settings.llm_model
         ),
     }
+
+
+@app.get("/api/stats", response_model=KnowledgeStats)
+def knowledge_stats() -> KnowledgeStats:
+    """Aggregate corpus figures for the dashboard.
+
+    Deliberately public: unlike the /api/knowledge endpoints this carries no
+    document titles, paths or content -- only counts -- so the overview can
+    show real numbers without an admin token.
+    """
+    return knowledge_manager.stats()
 
 
 @app.post("/api/ask", response_model=AskResponse)

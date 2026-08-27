@@ -440,11 +440,16 @@ async function updateSystemStatus() {
   const status = document.querySelector('#system-status');
   const count = document.querySelector('#knowledge-count');
   try {
-    const response = await fetch('/health');
-    if (!response.ok) throw new Error('Health check failed');
-    const health = await response.json();
+    const [healthRes, statsRes] = await Promise.all([fetch('/health'), fetch('/api/stats')]);
+    if (!healthRes.ok) throw new Error('Health check failed');
+    const health = await healthRes.json();
     status.textContent = health.status === 'ok' ? 'SYSTEM ONLINE' : 'SYSTEM CHECK';
-    count.textContent = `${health.knowledge_chunks.toLocaleString('id-ID')} knowledge chunks ready`;
+    if (statsRes.ok) {
+      const stats = await statsRes.json();
+      count.textContent = `${stats.total_documents.toLocaleString('id-ID')} dokumen · ${stats.total_chunks.toLocaleString('id-ID')} chunks`;
+    } else {
+      count.textContent = `${health.knowledge_chunks.toLocaleString('id-ID')} knowledge chunks ready`;
+    }
   } catch {
     status.textContent = 'SYSTEM OFFLINE';
     status.style.color = '#ff7070';
@@ -453,3 +458,85 @@ async function updateSystemStatus() {
 }
 
 updateSystemStatus();
+
+/**
+ * Overview cards, fed by the same simulation the Virtual Office runs.
+ *
+ * These four figures were hardcoded copy. The simulation already models the
+ * whole day -- calls arriving, AI resolving, escalations queuing -- so the
+ * overview now creates a headless engine (catalogue JSON only, no sprites),
+ * fast-forwards it from shift start to the current wall-clock in small steps,
+ * and reads the counters. Small steps matter: call arrivals are sampled per
+ * step, so one giant leap undercounts the day.
+ */
+async function hydrateOverviewMetrics() {
+  const set = (key, value, note) => {
+    const strong = document.querySelector(`[data-metric="${key}"]`);
+    const small = document.querySelector(`[data-metric-note="${key}"]`);
+    if (strong) strong.textContent = value;
+    if (small && note) small.innerHTML = note;
+  };
+  try {
+    const [sim, tilemap, catalog] = await Promise.all([
+      import('/static/office/sim.js'),
+      import('/static/office/tilemap.js'),
+      fetch('/static/assets/office/catalog.json').then((r) => r.json()),
+    ]);
+    // The office view starts its clock at "now" so the floor is live on
+    // arrival. The overview instead wants the day so far: rewind to the most
+    // recent shift's 08:00 and simulate forward, so "PANGGILAN MASUK" means
+    // today's total rather than "since you opened this page".
+    const { startHour, endHour, workdays } = sim.SHIFT;
+    const shiftStart = (() => {
+      const now = new Date();
+      for (let back = 0; back < 8; back += 1) {
+        const candidate = new Date(now);
+        candidate.setDate(now.getDate() - back);
+        candidate.setHours(startHour, 0, 0, 0);
+        if (candidate.getTime() <= now.getTime() && workdays.includes(candidate.getDay())) {
+          return candidate.getTime();
+        }
+      }
+      return now.getTime();
+    })();
+    const shiftEnd = shiftStart + (endHour - startHour) * 3_600_000;
+
+    const layout = tilemap.createDefaultLayout(catalog);
+    const engine = sim.createSimulation({
+      layout,
+      catalog,
+      startTime: shiftStart,
+      speed: sim.DEFAULT_SPEED,
+    });
+
+    const refresh = () => {
+      const m = sim.metrics(engine.state);
+      const pct = m.calls > 0 ? Math.round((m.resolvedByAi / Math.max(1, m.resolvedByAi + m.escalated)) * 100) : 0;
+      const mm = String(Math.floor(m.avgHandleSec / 60)).padStart(2, '0');
+      const ss = String(Math.round(m.avgHandleSec % 60)).padStart(2, '0');
+      set('calls', m.calls.toLocaleString('id-ID'), `<span class="up">${m.activeCalls}</span> aktif · simulasi hari ini`);
+      set('ai', m.resolvedByAi.toLocaleString('id-ID'), `<span class="up">${pct}%</span> selesai otomatis`);
+      set('escalated', m.escalated.toLocaleString('id-ID'), `<span class="warm">${m.queued + m.waiting}</span> dalam antrean`);
+      set('duration', m.calls > 0 ? `${mm}:${ss}` : '—', 'per panggilan (simulasi)');
+    };
+
+    // Warm up to "now" (clamped to shift end) in half-second steps, spread
+    // across frames so the tab never stalls; then tick in real time.
+    const target = Math.max(0, (Math.min(Date.now(), shiftEnd) - shiftStart) / 1000 / sim.DEFAULT_SPEED);
+    let warmed = 0;
+    const warm = () => {
+      const budget = Math.min(target - warmed, 240);
+      for (let used = 0; used < budget; used += 0.5) engine.update(0.5);
+      warmed += budget;
+      refresh();
+      if (warmed < target) requestAnimationFrame(warm);
+      else setInterval(() => { engine.update(10); refresh(); }, 10_000);
+    };
+    warm();
+  } catch {
+    // The cards keep their placeholder dashes; the sidebar already reports
+    // when the API itself is unreachable.
+  }
+}
+
+hydrateOverviewMetrics();
