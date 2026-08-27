@@ -21,7 +21,7 @@ const SOURCE_LABELS = {
 // editable rings, so no source type may claim them or a document's category
 // becomes indistinguishable from its status.
 const SOURCE_COLORS = {
-  official_regulation: '#53d9e5',
+  official_regulation: '#539ce5',
   official_html: '#46d7a6',
   official_pdf: '#a590ff',
   curated: '#f5de70',
@@ -769,7 +769,7 @@ class RagGraph {
       // Bold, on top of everything: this is the one thing the reader asked to
       // see. A glow carries it over the dot field underneath.
       ctx.globalAlpha = 1;
-      ctx.shadowColor = '#53d9e5';
+      ctx.shadowColor = '#539ce5';
       ctx.shadowBlur = 12;
       ctx.strokeStyle = 'rgba(120,240,255,0.95)';
       ctx.lineWidth = 2.6 / this.transform.scale;

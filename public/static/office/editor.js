@@ -359,7 +359,7 @@ export function createEditor({ bar, assets, getLayout, onChange, onReplace }) {
           : state.grabbed
             ? footprintOf(state.grabbed.type)
             : { fw: 1, fh: 1 };
-      context.strokeStyle = state.grabbed ? '#ffb248' : '#52d7e8';
+      context.strokeStyle = state.grabbed ? '#ffb248' : '#529de8';
       context.lineWidth = Math.max(1, Math.round(scale / 2));
       context.strokeRect(
         origin.x + state.hover.col * TILE_SIZE * scale,

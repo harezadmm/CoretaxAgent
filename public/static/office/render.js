@@ -43,14 +43,14 @@ const SURFACE_SORT_BIAS = 1;
 const PILE = { x: 10, baseY: 24, width: 12, step: 1.6, maxVisible: 7 };
 
 const BUBBLE_STYLE = {
-  call: { fill: '#52d7e8', glyph: 'phone' },
+  call: { fill: '#529de8', glyph: 'phone' },
   search: { fill: '#a590ff', glyph: 'search' },
   answer: { fill: '#46d7a6', glyph: 'wave' },
   escalate: { fill: '#ffb248', glyph: 'doc' },
   case: { fill: '#ffb248', glyph: 'doc' },
 };
 
-const ZONE_MARK = { ai: '#52d7e8', human: '#ffb248' };
+const ZONE_MARK = { ai: '#529de8', human: '#ffb248' };
 
 export function createRenderer(canvas, assets) {
   const context = canvas.getContext('2d', { alpha: false });
@@ -223,7 +223,7 @@ export function createRenderer(canvas, assets) {
           y - 2 - phase * 9,
           1.6,
           2.2,
-          '#dff1f7',
+          '#dfebf7',
           0.42 * (1 - phase),
         );
       }
